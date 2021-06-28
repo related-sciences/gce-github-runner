@@ -49,7 +49,6 @@ jobs:
           disk_size: ${{ github.event.inputs.disk_size }}
           runner_service_account: ${{ github.event.inputs.runner_service_account }}
           scopes: ${{ github.event.inputs.scopes }}
-          shutdown_timeout: ${{ github.event.inputs.shutdown_timeout }}
 
   test:
     needs: create-runner
@@ -59,4 +58,5 @@ jobs:
       - uses: related-sciences/gce-github-runner@main
         with:
           command: stop
+          shutdown_timeout: ${{ github.event.inputs.shutdown_timeout }}
         if: always()
