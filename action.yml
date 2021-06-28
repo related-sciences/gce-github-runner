@@ -1,0 +1,74 @@
+name: "Ephemeral GCE GitHub self-hosted runner"
+description: >-
+  Creates ephemeral GCE based GitHub Action self-hosted runner.
+  It uses startup script to bootstrap the VM.
+inputs:
+  command:
+    description: "`start` or `stop` of the runner"
+    default: start
+    required: true
+  token:
+    description: >-
+      GitHub auth token, needs `repo`/`public_repo` scope: https://docs.github.com/en/rest/reference/actions#self-hosted-runners.
+    required: true
+  project_id:
+    description: >-
+      ID of the Google Cloud Platform project. If provided, this will configure gcloud to use this project ID.
+    required: false
+  service_account_key:
+    description: >-
+      The service account key which will be used for authentication credentials.
+      This key should be created and stored as a secret. Should be JSON key.
+    required: false
+  runner_ver:
+    description: Version of the GitHub Runner.
+    default: "2.278.0"
+    required: true
+  machine_zone:
+    description: GCE zone
+    default: "us-east1-c"
+    required: true
+  machine_type:
+    description: GCE machine type; https://cloud.google.com/compute/docs/machine-types
+    default: "n1-standard-4"
+    required: true
+  disk_size:
+    description: VM disk size
+    # TODO: should default to the default?
+    default: "100g"
+    required: true
+  runner_service_account:
+    description: Service account of the VM, defaults to default compute service account.
+    required: false
+  scopes:
+    description: Scopes granted to the VM, defaults to full access (cloud-platform).
+    default: cloud-platform
+    required: true
+  shutdown_timeout:
+    description: "Grace period for the `stop` command, in seconds."
+    default: 30
+    required: true
+outputs:
+  label:
+    description: >-
+      Unique runner label. This label can be used to request a specific
+      runner for the workflow job.
+    value: ${{ steps.gce-github-runner-script.outputs.label }}
+runs:
+  using: "composite"
+  steps:
+    - id: gce-github-runner-script
+      run: >
+        ${{ github.action_path }}/action.sh
+        --command ${{ inputs.command }}
+        --token ${{ inputs.token }}
+        --project_id ${{ inputs.project_id }}
+        --service_account_key '${{ inputs.service_account_key }}'
+        --runner_ver ${{ inputs.runner_ver }}
+        --machine_zone ${{ inputs.machine_zone }}
+        --machine_type ${{ inputs.machine_type }}
+        --disk_size ${{ inputs.disk_size }}
+        --scopes ${{ inputs.scopes }}
+        --shutdown_timeout ${{ inputs.shutdown_timeout }}
+        --runner_service_account ${{ inputs.runner_service_account }}
+      shell: bash

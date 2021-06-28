@@ -1,0 +1,62 @@
+name: Manual test
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner_ver:
+        description: Version of the GitHub Runner.
+        default: "2.278.0"
+        required: true
+      machine_zone:
+        description: GCE zone
+        default: "us-east1-c"
+        required: true
+      machine_type:
+        description: GCE machine type; https://cloud.google.com/compute/docs/machine-types
+        default: "n1-standard-4"
+        required: true
+      disk_size:
+        description: VM disk size
+        default: "10g"
+        required: true
+      runner_service_account:
+        description: Service account of the VM, defaults to default compute service account.
+        required: false
+      scopes:
+        description: Scopes granted to the VM, defaults to full access (cloud-platform).
+        default: cloud-platform
+        required: true
+      shutdown_timeout:
+        description: "Grace period for the `stop` command, in seconds."
+        default: 30
+        required: true
+
+jobs:
+  create-runner:
+    runs-on: ubuntu-latest
+    outputs:
+      label: ${{ steps.create-runner.outputs.label }}
+    steps:
+      - id: create-runner
+        uses: related-sciences/gce-github-runner@main
+        with:
+          token: ${{ secrets.GH_SA_TOKEN }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          runner_ver: ${{ github.event.inputs.runner_ver }}
+          machine_zone: ${{ github.event.inputs.machine_zone }}
+          machine_type: ${{ github.event.inputs.machine_type }}
+          disk_size: ${{ github.event.inputs.disk_size }}
+          runner_service_account: ${{ github.event.inputs.runner_service_account }}
+          scopes: ${{ github.event.inputs.scopes }}
+          shutdown_timeout: ${{ github.event.inputs.shutdown_timeout }}
+
+  test:
+    needs: create-runner
+    runs-on: ${{ needs.create-runner.outputs.label }}
+    steps:
+      - run: echo "This runs on the GCE runner VM"
+      - uses: related-sciences/gce-github-runner@main
+        with:
+          command: stop
+        if: always()
