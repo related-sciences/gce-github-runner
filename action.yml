@@ -2,6 +2,10 @@ name: "Ephemeral GCE GitHub self-hosted runner"
 description: >-
   Creates ephemeral GCE based GitHub Action self-hosted runner.
   It uses startup script to bootstrap the VM.
+author: Rafal Wojdyla
+branding:
+  icon: triangle
+  color: purple
 inputs:
   command:
     description: "`start` or `stop` of the runner"
