@@ -46,8 +46,8 @@ jobs:
 | `machine_zone` | True | `us-east1-c` | GCE zone. |
 | `machine_type` | True | `n1-standard-4` | GCE machine type: https://cloud.google.com/compute/docs/machine-types |
 | `disk_size` | True | `100g` | VM disk size. |
-| `runner_service_account` | False |  | Service account of the VM, defaults to default compute service account. |
-| `scopes` | True | `cloud-platform` | Scopes granted to the VM. |
+| `runner_service_account` | False |  | Service account of the VM, defaults to default compute service account. Should have the permission to delete VMs (self delete). |
+| `scopes` | True | `cloud-platform` | Scopes granted to the VM, should include rights to delete VMs. |
 | `shutdown_timeout` | True | `30` | Grace period for the `stop` command, in seconds. |
 
 ## Example Workflows

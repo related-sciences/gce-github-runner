@@ -83,7 +83,8 @@ done
 
 function gcloud_auth {
   # NOTE: when --project is specified, it updated the config
-  echo ${service_account_key} | gcloud --project  ${project_id} --quiet auth activate-service-account --key-file -
+  echo ${service_account_key} | gcloud --project  ${project_id} --quiet auth activate-service-account --key-file - >/dev/null
+  echo "Successfully configured gcloud."
 }
 
 function start_vm {
@@ -95,7 +96,7 @@ function start_vm {
     gcloud_auth
   fi
 
-  RUNNER_TOKEN=$(curl -s -XPOST \
+  RUNNER_TOKEN=$(curl -S -s -XPOST \
       -H "authorization: Bearer ${token}" \
       https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runners/registration-token |\
       jq -r .token)
@@ -154,10 +155,10 @@ function stop_vm {
   #       to do that. VM shutdown will disconnect the runner, and GH will unregister it
   #       in 30 days
   # TODO: RUNNER_ALLOW_RUNASROOT=1 /actions-runner/config.sh remove --token $TOKEN
-  NAME=$(curl -X GET http://metadata.google.internal/computeMetadata/v1/instance/name -H 'Metadata-Flavor: Google')
-  ZONE=$(curl -X GET http://metadata.google.internal/computeMetadata/v1/instance/zone -H 'Metadata-Flavor: Google')
+  NAME=$(curl -S -s -X GET http://metadata.google.internal/computeMetadata/v1/instance/name -H 'Metadata-Flavor: Google')
+  ZONE=$(curl -S -s -X GET http://metadata.google.internal/computeMetadata/v1/instance/zone -H 'Metadata-Flavor: Google')
   echo "Self deleting $NAME in $ZONE in ${shutdown_timeout} seconds ..."
-  echo "sleep ${shutdown_timeout} ; gcloud --quiet compute instances delete $NAME --zone=$ZONE" | at now
+  echo "sleep ${shutdown_timeout}; gcloud --quiet compute instances delete $NAME --zone=$ZONE" | at now
 }
 
 safety_on
