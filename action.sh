@@ -19,6 +19,9 @@ source "${ACTION_DIR}/vendor/getopts_long.sh"
 runner_service_account=
 service_account_key=
 project_id=
+image_project=
+image=
+image_family=
 
 OPTLIND=1
 while getopts_long :h opt \
@@ -31,8 +34,12 @@ while getopts_long :h opt \
   machine_type required_argument \
   disk_size required_argument \
   runner_service_account optional_argument \
+  image_project optional_argument \
+  image optional_argument \
+  image_family optional_argument \
   scopes required_argument \
   shutdown_timeout required_argument \
+  actions_preinstalled required_argument \
   help no_argument "" "$@"
 do
   case "$opt" in
@@ -63,11 +70,23 @@ do
     runner_service_account)
       runner_service_account=${OPTLARG-$runner_service_account}
       ;;
+    image_project)
+      image_project=${OPTLARG-$image_project}
+      ;;
+    image)
+      image=${OPTLARG-$image}
+      ;;
+    image_family)
+      image_family=${OPTLARG-$image_family}
+      ;;
     scopes)
       scopes=$OPTLARG
       ;;
     shutdown_timeout)
       shutdown_timeout=$OPTLARG
+      ;;
+    actions_preinstalled)
+      actions_preinstalled=$OPTLARG
       ;;
     h|help)
       usage
@@ -104,7 +123,36 @@ function start_vm {
 
   VM_ID="gce-gh-runner-${GITHUB_RUN_ID}-${RANDOM}"
   service_account_flag=$([[ -z "${runner_service_account}" ]] || echo "--service-account=${runner_service_account}")
+  image_project_flag=$([[ -z "${image_project}" ]] || echo "--image-project=${image_project}")
+  image_flag=$([[ -z "${image}" ]] || echo "--image=${image}")
+  image_family_flag=$([[ -z "${image_family}" ]] || echo "--image-family=${image_family}")
   echo "The new GCE VM will be ${VM_ID}"
+
+  startup_script="
+    gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=0 && \\
+    RUNNER_ALLOW_RUNASROOT=1 ./config.sh --url https://github.com/${GITHUB_REPOSITORY} --token ${RUNNER_TOKEN} --labels ${VM_ID} --unattended && \\
+    ./svc.sh install && \\
+    ./svc.sh start && \\
+    gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=1
+    # 3 days represents the max workflow runtime. This will shutdown the instance if everything else fails.
+    echo \"gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone}\" | at now + 3 days
+    "
+
+  if $actions_preinstalled ; then
+    echo "✅ Startup script won't install GitHub Actions (pre-installed)"
+    startup_script="#!/bin/bash
+    cd /actions-runner
+    $startup_script"
+  else
+    echo "✅ Startup script will install GitHub Actions"
+    startup_script="#!/bin/bash
+    mkdir /actions-runner
+    cd /actions-runner
+    curl -o actions-runner-linux-x64-${runner_ver}.tar.gz -L https://github.com/actions/runner/releases/download/v${runner_ver}/actions-runner-linux-x64-${runner_ver}.tar.gz
+    tar xzf ./actions-runner-linux-x64-${runner_ver}.tar.gz
+    ./bin/installdependencies.sh && \\
+    $startup_script"
+  fi
 
   gcloud compute instances create ${VM_ID} \
     --zone=${machine_zone} \
@@ -112,23 +160,12 @@ function start_vm {
     --machine-type=${machine_type} \
     --scopes=${scopes} \
     ${service_account_flag} \
+    ${image_project_flag} \
+    ${image_flag} \
+    ${image_family_flag} \
     --labels=gh_ready=0 \
-    --metadata=startup-script="#! /bin/bash
-    mkdir actions-runner && cd actions-runner
-    curl -o actions-runner-linux-x64-${runner_ver}.tar.gz -L https://github.com/actions/runner/releases/download/v${runner_ver}/actions-runner-linux-x64-${runner_ver}.tar.gz
-    tar xzf ./actions-runner-linux-x64-${runner_ver}.tar.gz
-    # TODO: this should be removed or configurable?
-    apt-get update && apt-get install docker.io at -y
-    # Next few cmds must all be successful at the same time otherwise GH will delete this VM
-    gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=0 && \\
-    ./bin/installdependencies.sh && \\
-    RUNNER_ALLOW_RUNASROOT=1 ./config.sh --url https://github.com/${GITHUB_REPOSITORY} --token ${RUNNER_TOKEN} --labels ${VM_ID} --unattended && \\
-    ./svc.sh install && \\
-    ./svc.sh start && \\
-    gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=1
-    # 3 days represents the max workflow runtime. This will shutdown the instance if everything else fails.
-    echo \"gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone}\" | at now + 3 days
-    " && echo "::set-output name=label::${VM_ID}"
+    --metadata=startup-script="$startup_script" \
+    && echo "::set-output name=label::${VM_ID}"
 
   safety_off
   while (( i++ < 24 )); do

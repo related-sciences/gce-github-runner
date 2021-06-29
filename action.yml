@@ -43,8 +43,18 @@ inputs:
     required: true
   runner_service_account:
     description: Service account of the VM, defaults to default compute service account.
-    default: ''
-    required: true
+    required: false
+  image_project:
+    description: >
+      The Google Cloud project against which all image and image family
+      references will be resolved.
+    required: false
+  image:
+    description: Specifies the name of the image that the disk will be initialized with.
+    required: false
+  image_family:
+    description: The image family for the operating system that the boot disk will be initialized with.
+    required: false
   scopes:
     description: Scopes granted to the VM, defaults to full access (cloud-platform).
     default: cloud-platform
@@ -52,6 +62,10 @@ inputs:
   shutdown_timeout:
     description: "Grace period for the `stop` command, in seconds."
     default: 30
+    required: true
+  actions_preinstalled:
+    description: "Whether the GitHub actions have already been installed at `/actions-runner`."
+    default: false
     required: true
 outputs:
   label:
@@ -76,4 +90,8 @@ runs:
         --scopes=${{ inputs.scopes }}
         --shutdown_timeout=${{ inputs.shutdown_timeout }}
         --runner_service_account=${{ inputs.runner_service_account }}
+        --image_project=${{ inputs.image_project }}
+        --image=${{ inputs.image }}
+        --image_family=${{ inputs.image_family }}
+        --actions_preinstalled=${{ inputs.actions_preinstalled }}
       shell: bash
