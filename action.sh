@@ -176,12 +176,12 @@ function start_vm {
     echo "${VM_ID} not ready yet, waiting 5 secs ..."
     sleep 5
   done
-  if [[ $GH_READY == 0 ]]; then
+  if [[ $GH_READY == 1 ]]; then
+    echo "✅ ${VM_ID} ready ..."
+  else
     echo "Waited 2 minutes for ${VM_ID}, without luck, deleting ${VM_ID} ..."
     gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone}
     exit 1
-  else
-    echo "✅ ${VM_ID} ready ..."
   fi
 }
 
