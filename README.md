@@ -45,7 +45,7 @@ jobs:
 | `runner_ver` | True | `2.278.0` | Version of the GitHub Runner. |
 | `machine_zone` | True | `us-east1-c` | GCE zone. |
 | `machine_type` | True | `n1-standard-4` | GCE machine type: https://cloud.google.com/compute/docs/machine-types |
-| `disk_size` | True | `100g` | VM disk size. |
+| `disk_size` | False |  | VM disk size. |
 | `runner_service_account` | False |  | Service account of the VM, defaults to default compute service account. Should have the permission to delete VMs (self delete). |
 | `image_project` | False |  | The Google Cloud project against which all image and image family references will be resolved. |
 | `image` | False |  | Specifies the name of the image that the disk will be initialized with. |
@@ -55,9 +55,9 @@ jobs:
 | `actions_preinstalled` | True | `false` | Whether the GitHub actions have already been installed at `/actions-runner`. |
 
 The GCE runner image should have at least:
- * gcloud
- * git
- * at
+ * `gcloud`
+ * `git`
+ * `at`
  * (optionally) GitHub Actions Runner (see `actions_preinstalled` parameter)
 
 ## Example Workflows

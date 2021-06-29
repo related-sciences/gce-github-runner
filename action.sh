@@ -22,6 +22,7 @@ project_id=
 image_project=
 image=
 image_family=
+disk_size=
 
 OPTLIND=1
 while getopts_long :h opt \
@@ -32,7 +33,7 @@ while getopts_long :h opt \
   runner_ver required_argument \
   machine_zone required_argument \
   machine_type required_argument \
-  disk_size required_argument \
+  disk_size optional_argument \
   runner_service_account optional_argument \
   image_project optional_argument \
   image optional_argument \
@@ -65,7 +66,7 @@ do
       machine_type=$OPTLARG
       ;;
     disk_size)
-      disk_size=$OPTLARG
+      disk_size=${OPTLARG-$disk_size}
       ;;
     runner_service_account)
       runner_service_account=${OPTLARG-$runner_service_account}
@@ -101,7 +102,7 @@ do
 done
 
 function gcloud_auth {
-  # NOTE: when --project is specified, it updated the config
+  # NOTE: when --project is specified, it updates the config
   echo ${service_account_key} | gcloud --project  ${project_id} --quiet auth activate-service-account --key-file - &>/dev/null
   echo "✅ Successfully configured gcloud."
 }
@@ -126,6 +127,7 @@ function start_vm {
   image_project_flag=$([[ -z "${image_project}" ]] || echo "--image-project=${image_project}")
   image_flag=$([[ -z "${image}" ]] || echo "--image=${image}")
   image_family_flag=$([[ -z "${image_family}" ]] || echo "--image-family=${image_family}")
+  disk_size_flag=$([[ -z "${disk_size}" ]] || echo "--disk-size=${disk_size}")
   echo "The new GCE VM will be ${VM_ID}"
 
   startup_script="
@@ -156,7 +158,7 @@ function start_vm {
 
   gcloud compute instances create ${VM_ID} \
     --zone=${machine_zone} \
-    --boot-disk-size=${disk_size} \
+    ${disk_size_flag} \
     --machine-type=${machine_type} \
     --scopes=${scopes} \
     ${service_account_flag} \
