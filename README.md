@@ -65,3 +65,15 @@ The GCE runner image should have at least:
 ## Example Workflows
 
 * [Test Workflow](./.github/workflows/test.yml): Test workflow.
+
+## Self-hosted runner security with public repositories
+
+From [GitHub's documentation](https://docs.github.com/en/actions/hosting-your-own-runners/about-self-hosted-runners#self-hosted-runner-security-with-public-repositories):
+
+> We recommend that you only use self-hosted runners with private repositories. This is because forks of your
+> repository can potentially run dangerous code on your self-hosted runner machine by creating a pull request that
+> executes the code in a workflow.
+
+## EC2/AWS action
+
+If you need EC2/AWS self-hosted runner, check out [machulav/ec2-github-runner](https://github.com/machulav/ec2-github-runner).
