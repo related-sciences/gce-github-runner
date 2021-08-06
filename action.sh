@@ -127,7 +127,7 @@ function start_vm {
   image_project_flag=$([[ -z "${image_project}" ]] || echo "--image-project=${image_project}")
   image_flag=$([[ -z "${image}" ]] || echo "--image=${image}")
   image_family_flag=$([[ -z "${image_family}" ]] || echo "--image-family=${image_family}")
-  disk_size_flag=$([[ -z "${disk_size}" ]] || echo "--disk-size=${disk_size}")
+  disk_size_flag=$([[ -z "${disk_size}" ]] || echo "--boot-disk-size=${disk_size}")
   echo "The new GCE VM will be ${VM_ID}"
 
   startup_script="
