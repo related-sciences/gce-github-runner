@@ -136,8 +136,8 @@ function start_vm {
   image_flag=$([[ -z "${image}" ]] || echo "--image=${image}")
   image_family_flag=$([[ -z "${image_family}" ]] || echo "--image-family=${image_family}")
   disk_size_flag=$([[ -z "${disk_size}" ]] || echo "--boot-disk-size=${disk_size}")
-  preemptible_flag=$([[ "${preemptible}" == true ]] && echo "--preemptible")
-  ephemeral_flag=$([[ "${ephemeral}" == true ]] && echo "--ephemeral")
+  preemptible_flag=$([[ "${preemptible}" == "true" ]] && echo "--preemptible" || echo "")
+  ephemeral_flag=$([[ "${ephemeral}" == "true" ]] && echo "--ephemeral" || echo "")
 
   echo "The new GCE VM will be ${VM_ID}"
 
