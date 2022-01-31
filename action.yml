@@ -26,7 +26,7 @@ inputs:
     required: false
   runner_ver:
     description: Version of the GitHub Runner.
-    default: "2.278.0"
+    default: "2.287.1"
     required: true
   machine_zone:
     description: GCE zone
@@ -53,6 +53,14 @@ inputs:
   image_family:
     description: The image family for the operating system that the boot disk will be initialized with.
     required: false
+  preemptible:
+    description: Use GCE preemptible VM instance; https://cloud.google.com/compute/docs/instances/preemptible
+    default: true
+    required: true
+  ephemeral:
+    description: Set GitHub runner to be ephemeral; https://docs.github.com/en/actions/hosting-your-own-runners/autoscaling-with-self-hosted-runners#using-ephemeral-runners-for-autoscaling
+    default: false
+    required: true
   scopes:
     description: Scopes granted to the VM, defaults to full access (cloud-platform).
     default: cloud-platform
@@ -91,5 +99,7 @@ runs:
         --image_project=${{ inputs.image_project }}
         --image=${{ inputs.image }}
         --image_family=${{ inputs.image_family }}
+        --preemptible=${{ inputs.preemptible }}
+        --ephemeral=${{ inputs.ephemeral }}
         --actions_preinstalled=${{ inputs.actions_preinstalled }}
       shell: bash
