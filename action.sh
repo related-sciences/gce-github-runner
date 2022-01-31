@@ -40,6 +40,8 @@ while getopts_long :h opt \
   image_family optional_argument \
   scopes required_argument \
   shutdown_timeout required_argument \
+  preemptible required_argument \
+  ephemeral required_argument \
   actions_preinstalled required_argument \
   help no_argument "" "$@"
 do
@@ -86,6 +88,12 @@ do
     shutdown_timeout)
       shutdown_timeout=$OPTLARG
       ;;
+    preemptible)
+      preemptible=$OPTLARG
+      ;;
+    ephemeral)
+      ephemeral=$OPTLARG
+      ;;
     actions_preinstalled)
       actions_preinstalled=$OPTLARG
       ;;
@@ -128,11 +136,14 @@ function start_vm {
   image_flag=$([[ -z "${image}" ]] || echo "--image=${image}")
   image_family_flag=$([[ -z "${image_family}" ]] || echo "--image-family=${image_family}")
   disk_size_flag=$([[ -z "${disk_size}" ]] || echo "--boot-disk-size=${disk_size}")
+  preemptible_flag=$([[ "${preemptible}" == true ]] && echo "--preemptible")
+  ephemeral_flag=$([[ "${ephemeral}" == true ]] && echo "--ephemeral")
+
   echo "The new GCE VM will be ${VM_ID}"
 
   startup_script="
     gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=0 && \\
-    RUNNER_ALLOW_RUNASROOT=1 ./config.sh --url https://github.com/${GITHUB_REPOSITORY} --token ${RUNNER_TOKEN} --labels ${VM_ID} --unattended && \\
+    RUNNER_ALLOW_RUNASROOT=1 ./config.sh --url https://github.com/${GITHUB_REPOSITORY} --token ${RUNNER_TOKEN} --labels ${VM_ID} --unattended ${ephemeral_flag} --disableupdate && \\
     ./svc.sh install && \\
     ./svc.sh start && \\
     gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=1
@@ -165,6 +176,7 @@ function start_vm {
     ${image_project_flag} \
     ${image_flag} \
     ${image_family_flag} \
+    ${preemptible_flag} \
     --labels=gh_ready=0 \
     --metadata=startup-script="$startup_script" \
     && echo "::set-output name=label::${VM_ID}"
