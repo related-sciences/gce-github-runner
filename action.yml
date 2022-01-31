@@ -55,7 +55,7 @@ inputs:
     required: false
   preemptible:
     description: Use GCE preemptible VM instance; https://cloud.google.com/compute/docs/instances/preemptible
-    default: true
+    default: false
     required: true
   ephemeral:
     description: Set GitHub runner to be ephemeral; https://docs.github.com/en/actions/hosting-your-own-runners/autoscaling-with-self-hosted-runners#using-ephemeral-runners-for-autoscaling
