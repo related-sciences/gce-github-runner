@@ -39,23 +39,7 @@ jobs:
 
 ## Inputs
 
-| Name | Required | Default | Description |
-| ---- | -------- | ------- | ----------- |
-| `command` | True | `start` | `start` or `stop` of the runner. |
-| `token` | True |  | GitHub auth token, needs `repo`/`public_repo` scope: https://docs.github.com/en/rest/reference/actions#self-hosted-runners. |
-| `project_id` | True |  | ID of the Google Cloud Platform project. If provided, this will configure gcloud to use this project ID. |
-| `service_account_key` | True |  | The service account key which will be used for authentication credentials. This key should be created and stored as a secret. Should be JSON key. |
-| `runner_ver` | True | `2.278.0` | Version of the GitHub Runner. |
-| `machine_zone` | True | `us-east1-c` | GCE zone. |
-| `machine_type` | True | `n1-standard-4` | GCE machine type: https://cloud.google.com/compute/docs/machine-types |
-| `disk_size` | False |  | VM disk size. |
-| `runner_service_account` | False |  | Service account of the VM, defaults to default compute service account. Should have the permission to delete VMs (self delete). |
-| `image_project` | False |  | The Google Cloud project against which all image and image family references will be resolved. |
-| `image` | False |  | Specifies the name of the image that the disk will be initialized with. |
-| `image_family` | False |  | The image family for the operating system that the boot disk will be initialized with. |
-| `scopes` | True | `cloud-platform` | Scopes granted to the VM. |
-| `shutdown_timeout` | True | `30` | Grace period for the `stop` command, in seconds. |
-| `actions_preinstalled` | True | `false` | Whether the GitHub actions have already been installed at `/actions-runner`. |
+See inputs and descriptions [here](./action.yml).
 
 The GCE runner image should have at least:
  * `gcloud`
