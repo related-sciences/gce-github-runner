@@ -23,6 +23,8 @@ image_project=
 image=
 image_family=
 disk_size=
+preemptible=
+ephemeral=
 
 OPTLIND=1
 while getopts_long :h opt \
