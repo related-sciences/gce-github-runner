@@ -25,6 +25,7 @@ image_family=
 disk_size=
 preemptible=
 ephemeral=
+actions_preinstalled=
 
 OPTLIND=1
 while getopts_long :h opt \
