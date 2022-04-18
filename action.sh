@@ -16,13 +16,20 @@ function safety_off {
 
 source "${ACTION_DIR}/vendor/getopts_long.sh"
 
-runner_service_account=
-service_account_key=
+command=
+token=
 project_id=
+service_account_key=
+runner_ver=
+machine_zone=
+machine_type=
+disk_size=
+runner_service_account=
 image_project=
 image=
 image_family=
-disk_size=
+scopes=
+shutdown_timeout=
 preemptible=
 ephemeral=
 actions_preinstalled=
