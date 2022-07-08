@@ -73,6 +73,10 @@ inputs:
     description: "Whether the GitHub actions have already been installed at `/actions-runner`."
     default: false
     required: true
+  boot_disk_type:
+    description: "Boot disk type of VM"
+    default: pd-ssd
+    required: false
 outputs:
   label:
     description: >-
@@ -99,6 +103,7 @@ runs:
         --image_project=${{ inputs.image_project }}
         --image=${{ inputs.image }}
         --image_family=${{ inputs.image_family }}
+        --boot_disk_type=${{ inputs.boot_disk_type }}
         --preemptible=${{ inputs.preemptible }}
         --ephemeral=${{ inputs.ephemeral }}
         --actions_preinstalled=${{ inputs.actions_preinstalled }}

@@ -24,6 +24,7 @@ runner_ver=
 machine_zone=
 machine_type=
 disk_size=
+boot_disk_type=
 runner_service_account=
 image_project=
 image=
@@ -44,6 +45,7 @@ while getopts_long :h opt \
   machine_zone required_argument \
   machine_type required_argument \
   disk_size optional_argument \
+  boot_disk_type optional_argument \
   runner_service_account optional_argument \
   image_project optional_argument \
   image optional_argument \
@@ -79,6 +81,9 @@ do
       ;;
     disk_size)
       disk_size=${OPTLARG-$disk_size}
+      ;;
+    boot_disk_type)
+      boot_disk_type=${OPTLARG-$boot_disk_type}
       ;;
     runner_service_account)
       runner_service_account=${OPTLARG-$runner_service_account}
@@ -146,12 +151,14 @@ function start_vm {
   image_flag=$([[ -z "${image}" ]] || echo "--image=${image}")
   image_family_flag=$([[ -z "${image_family}" ]] || echo "--image-family=${image_family}")
   disk_size_flag=$([[ -z "${disk_size}" ]] || echo "--boot-disk-size=${disk_size}")
+  boot_disk_type_flag=$([[ -z "${boot_disk_type}" ]] || echo "--boot-disk-type=${boot_disk_type}")
   preemptible_flag=$([[ "${preemptible}" == "true" ]] && echo "--preemptible" || echo "")
   ephemeral_flag=$([[ "${ephemeral}" == "true" ]] && echo "--ephemeral" || echo "")
 
   echo "The new GCE VM will be ${VM_ID}"
 
   startup_script="
+    apt install -y at && \\
     gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=0 && \\
     RUNNER_ALLOW_RUNASROOT=1 ./config.sh --url https://github.com/${GITHUB_REPOSITORY} --token ${RUNNER_TOKEN} --labels ${VM_ID} --unattended ${ephemeral_flag} --disableupdate && \\
     ./svc.sh install && \\
@@ -180,6 +187,7 @@ function start_vm {
   gcloud compute instances create ${VM_ID} \
     --zone=${machine_zone} \
     ${disk_size_flag} \
+    ${boot_disk_type_flag} \
     --machine-type=${machine_type} \
     --scopes=${scopes} \
     ${service_account_flag} \
