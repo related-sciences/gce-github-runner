@@ -189,7 +189,7 @@ function start_vm {
     ${preemptible_flag} \
     --labels=gh_ready=0 \
     --metadata=startup-script="$startup_script" \
-    && echo "::set-output name=label::${VM_ID}"
+    && echo "label=${VM_ID}" >> $GITHUB_OUTPUT
 
   safety_off
   while (( i++ < 24 )); do
