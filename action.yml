@@ -26,7 +26,7 @@ inputs:
     required: false
   runner_ver:
     description: Version of the GitHub Runner.
-    default: "2.298.2"
+    default: "2.300.2"
     required: true
   machine_zone:
     description: GCE zone
