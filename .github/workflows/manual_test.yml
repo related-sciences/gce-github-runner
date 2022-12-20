@@ -17,24 +17,13 @@ on:
       runner_service_account:
         description: Service account of the VM, defaults to default compute service account.
         required: false
-      image_project:
-        description: >
-          The Google Cloud project against which all image and image family
-          references will be resolved.
-        required: false
-      image:
-        description: Specifies the name of the image that the disk will be initialized with.
-        required: false
-      image_family:
-        description: The image family for the operating system that the boot disk will be initialized with.
-        required: false
-      scopes:
-        description: Scopes granted to the VM, defaults to full access (cloud-platform).
-        default: cloud-platform
-        required: true
       shutdown_timeout:
         description: "Grace period for the `stop` command, in seconds."
         default: 30
+        required: true
+      no_external_address:
+        description: Disables external IP address for the worker
+        default: false
         required: true
       actions_preinstalled:
         description: "Whether the GitHub actions have already been installed at `/actions-runner`."
@@ -53,16 +42,14 @@ jobs:
           token: ${{ secrets.GH_SA_TOKEN }}
           project_id: ${{ secrets.GCP_PROJECT_ID }}
           service_account_key: ${{ secrets.GCP_SA_KEY }}
-          runner_ver: "2.278.0"
-          machine_zone: ${{ github.event.inputs.machine_zone }}
-          machine_type: ${{ github.event.inputs.machine_type }}
-          disk_size: ${{ github.event.inputs.disk_size }}
-          runner_service_account: ${{ github.event.inputs.runner_service_account }}
-          image_project: ${{ github.event.inputs.image_project }}
-          image: ${{ github.event.inputs.image }}
-          image_family: ${{ github.event.inputs.image_family }}
-          scopes: ${{ github.event.inputs.scopes }}
-          actions_preinstalled: ${{ github.event.inputs.actions_preinstalled }}
+          machine_zone: ${{ inputs.machine_zone }}
+          machine_type: ${{ inputs.machine_type }}
+          disk_size: ${{ inputs.disk_size }}
+          runner_service_account: ${{ inputs.runner_service_account }}
+          image_project: ubuntu-os-cloud
+          image_family: ubuntu-2004-lts
+          no_external_address: ${{ inputs.no_external_address }}
+          actions_preinstalled: ${{ inputs.actions_preinstalled }}
 
   test:
     needs: create-runner
@@ -72,5 +59,5 @@ jobs:
       - uses: related-sciences/gce-github-runner@main
         with:
           command: stop
-          shutdown_timeout: ${{ github.event.inputs.shutdown_timeout }}
+          shutdown_timeout: ${{ inputs.shutdown_timeout }}
         if: always()
