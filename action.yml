@@ -61,6 +61,10 @@ inputs:
     description: Set GitHub runner to be ephemeral; https://docs.github.com/en/actions/hosting-your-own-runners/autoscaling-with-self-hosted-runners#using-ephemeral-runners-for-autoscaling
     default: false
     required: true
+  no_external_address:
+    description: Disables external IP address for the worker
+    default: false
+    required: true
   scopes:
     description: Scopes granted to the VM, defaults to full access (cloud-platform).
     default: cloud-platform
@@ -101,5 +105,6 @@ runs:
         --image_family=${{ inputs.image_family }}
         --preemptible=${{ inputs.preemptible }}
         --ephemeral=${{ inputs.ephemeral }}
+        --no_external_address=${{ inputs.no_external_address }}
         --actions_preinstalled=${{ inputs.actions_preinstalled }}
       shell: bash

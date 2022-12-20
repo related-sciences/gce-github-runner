@@ -32,6 +32,7 @@ scopes=
 shutdown_timeout=
 preemptible=
 ephemeral=
+no_external_address=
 actions_preinstalled=
 
 OPTLIND=1
@@ -52,6 +53,7 @@ while getopts_long :h opt \
   shutdown_timeout required_argument \
   preemptible required_argument \
   ephemeral required_argument \
+  no_external_address required_argument \
   actions_preinstalled required_argument \
   help no_argument "" "$@"
 do
@@ -104,6 +106,9 @@ do
     ephemeral)
       ephemeral=$OPTLARG
       ;;
+    no_external_address)
+      no_external_address=$OPTLARG
+      ;;
     actions_preinstalled)
       actions_preinstalled=$OPTLARG
       ;;
@@ -148,6 +153,7 @@ function start_vm {
   disk_size_flag=$([[ -z "${disk_size}" ]] || echo "--boot-disk-size=${disk_size}")
   preemptible_flag=$([[ "${preemptible}" == "true" ]] && echo "--preemptible" || echo "")
   ephemeral_flag=$([[ "${ephemeral}" == "true" ]] && echo "--ephemeral" || echo "")
+  no_external_address_flag=$([[ "${no_external_address}" == "true" ]] && echo "--no-address" || echo "")
 
   echo "The new GCE VM will be ${VM_ID}"
 
@@ -187,6 +193,7 @@ function start_vm {
     ${image_flag} \
     ${image_family_flag} \
     ${preemptible_flag} \
+    ${no_external_address_flag} \
     --labels=gh_ready=0 \
     --metadata=startup-script="$startup_script" \
     && echo "label=${VM_ID}" >> $GITHUB_OUTPUT
