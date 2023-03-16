@@ -212,7 +212,6 @@ function start_vm {
     ${image_family_flag} \
     ${preemptible_flag} \
     ${no_external_address_flag} \
-    ${network_flag} \
     ${subnet_flag} \
     ${gpu_flag} \
     --labels=gh_ready=0 \
