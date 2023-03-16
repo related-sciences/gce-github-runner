@@ -24,12 +24,15 @@ runner_ver=
 machine_zone=
 machine_type=
 disk_size=
+gpu=
 runner_service_account=
 image_project=
 image=
 image_family=
+network=
 scopes=
 shutdown_timeout=
+subnet=
 preemptible=
 ephemeral=
 no_external_address=
@@ -45,12 +48,15 @@ while getopts_long :h opt \
   machine_zone required_argument \
   machine_type required_argument \
   disk_size optional_argument \
+  gpu optional_argument \
   runner_service_account optional_argument \
   image_project optional_argument \
   image optional_argument \
   image_family optional_argument \
+  network optional_argument \
   scopes required_argument \
   shutdown_timeout required_argument \
+  subnet optional_argument \
   preemptible required_argument \
   ephemeral required_argument \
   no_external_address required_argument \
@@ -82,6 +88,9 @@ do
     disk_size)
       disk_size=${OPTLARG-$disk_size}
       ;;
+    gpu)
+      gpu=${OPTLARG-$gpu}
+      ;;
     runner_service_account)
       runner_service_account=${OPTLARG-$runner_service_account}
       ;;
@@ -94,11 +103,17 @@ do
     image_family)
       image_family=${OPTLARG-$image_family}
       ;;
+    network)
+      network=${OPTLARG-$network}
+      ;;
     scopes)
       scopes=$OPTLARG
       ;;
     shutdown_timeout)
       shutdown_timeout=$OPTLARG
+      ;;
+    subnet)
+      subnet=${OPTLARG-$subnet}
       ;;
     preemptible)
       preemptible=$OPTLARG
@@ -154,6 +169,9 @@ function start_vm {
   preemptible_flag=$([[ "${preemptible}" == "true" ]] && echo "--preemptible" || echo "")
   ephemeral_flag=$([[ "${ephemeral}" == "true" ]] && echo "--ephemeral" || echo "")
   no_external_address_flag=$([[ "${no_external_address}" == "true" ]] && echo "--no-address" || echo "")
+  network_flag=$([[ ! -z "${network}"  ]] && echo "--network=${network}" || echo "")
+  subnet_flag=$([[ ! -z "${subnet}"  ]] && echo "--subnet=${subnet}" || echo "")
+  gpu_flag=$([[ ! -z "${gpu}"  ]] && echo "--saccelerator=${gpu}" || echo "")
 
   echo "The new GCE VM will be ${VM_ID}"
 
@@ -194,6 +212,9 @@ function start_vm {
     ${image_family_flag} \
     ${preemptible_flag} \
     ${no_external_address_flag} \
+    ${network_flag} \
+    ${subnet_flag} \
+    ${gpu_flag} \
     --labels=gh_ready=0 \
     --metadata=startup-script="$startup_script" \
     && echo "label=${VM_ID}" >> $GITHUB_OUTPUT
