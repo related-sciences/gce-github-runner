@@ -181,8 +181,10 @@ function start_vm {
     ./svc.sh install && \\
     ./svc.sh start && \\
     gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=1
-    # 3 days represents the max workflow runtime. This will shutdown the instance if everything else fails.
-    echo \"gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone}\" | at now + 3 days
+    # Install at if not installed
+    command -v at >/dev/null 2>&1 ||  apt-get install -y -q at
+    # 1 days represents the max workflow runtime. This will shutdown the instance if everything else fails.
+    echo \"gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone}\" | at now + 1 days
     "
 
   if $actions_preinstalled ; then
