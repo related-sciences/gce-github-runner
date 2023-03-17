@@ -92,6 +92,10 @@ inputs:
     description: "Whether the GitHub actions have already been installed at `/actions-runner`."
     default: false
     required: true
+  arm:
+    description: "Whether the GitHub actions should use arm64 binaries."
+    default: false
+    required: false
 outputs:
   label:
     description: >-
@@ -125,4 +129,5 @@ runs:
         --ephemeral=${{ inputs.ephemeral }}
         --no_external_address=${{ inputs.no_external_address }}
         --actions_preinstalled=${{ inputs.actions_preinstalled }}
+        --arm=${{ inputs.arm }}
       shell: bash

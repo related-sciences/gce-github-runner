@@ -37,6 +37,7 @@ preemptible=
 ephemeral=
 no_external_address=
 actions_preinstalled=
+arm=
 
 OPTLIND=1
 while getopts_long :h opt \
@@ -61,6 +62,7 @@ while getopts_long :h opt \
   ephemeral required_argument \
   no_external_address required_argument \
   actions_preinstalled required_argument \
+  arm required_argument \
   help no_argument "" "$@"
 do
   case "$opt" in
@@ -126,6 +128,9 @@ do
       ;;
     actions_preinstalled)
       actions_preinstalled=$OPTLARG
+      ;;
+    arm)
+      arm=$OPTLARG
       ;;
     h|help)
       usage
@@ -194,13 +199,24 @@ function start_vm {
     $startup_script"
   else
     echo "✅ Startup script will install GitHub Actions"
-    startup_script="#!/bin/bash
-    mkdir /actions-runner
-    cd /actions-runner
-    curl -o actions-runner-linux-x64-${runner_ver}.tar.gz -L https://github.com/actions/runner/releases/download/v${runner_ver}/actions-runner-linux-x64-${runner_ver}.tar.gz
-    tar xzf ./actions-runner-linux-x64-${runner_ver}.tar.gz
-    ./bin/installdependencies.sh && \\
-    $startup_script"
+    if $arm ; then
+      curl -o actions-runner-linux-arm64-2.303.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.303.0/actions-runner-linux-arm64-2.303.0.tar.gz
+      startup_script="#!/bin/bash
+      mkdir /actions-runner
+      cd /actions-runner
+      curl -o actions-runner-linux-arm64-${runner_ver}.tar.gz -L https://github.com/actions/runner/releases/download/v${runner_ver}/actions-runner-linux-arm64-${runner_ver}.tar.gz
+      tar xzf ./actions-runner-linux-arm64-${runner_ver}.tar.gz
+      ./bin/installdependencies.sh && \\
+      $startup_script"
+    else
+      startup_script="#!/bin/bash
+      mkdir /actions-runner
+      cd /actions-runner
+      curl -o actions-runner-linux-x64-${runner_ver}.tar.gz -L https://github.com/actions/runner/releases/download/v${runner_ver}/actions-runner-linux-x64-${runner_ver}.tar.gz
+      tar xzf ./actions-runner-linux-x64-${runner_ver}.tar.gz
+      ./bin/installdependencies.sh && \\
+      $startup_script"
+    fi
   fi
 
   gcloud compute instances create ${VM_ID} \
