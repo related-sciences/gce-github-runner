@@ -219,7 +219,7 @@ function start_vm {
     && echo "label=${VM_ID}" >> $GITHUB_OUTPUT
 
   safety_off
-  while (( i++ < 24 )); do
+  while (( i++ < 36 )); do
     GH_READY=$(gcloud compute instances describe ${VM_ID} --zone=${machine_zone} --format='json(labels)' | jq -r .labels.gh_ready)
     if [[ $GH_READY == 1 ]]; then
       break
@@ -230,8 +230,8 @@ function start_vm {
   if [[ $GH_READY == 1 ]]; then
     echo "✅ ${VM_ID} ready ..."
   else
-    echo "Waited 2 minutes for ${VM_ID}, without luck, deleting ${VM_ID} ..."
-    gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone}
+    echo "Waited 3 minutes for ${VM_ID}, without luck, deleting ${VM_ID} ..."
+    # gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone}
     exit 1
   fi
 }
