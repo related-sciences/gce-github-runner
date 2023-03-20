@@ -181,7 +181,8 @@ function start_vm {
   no_external_address_flag=$([[ "${no_external_address}" == "true" ]] && echo "--no-address" || echo "")
   network_flag=$([[ ! -z "${network}"  ]] && echo "--network=${network}" || echo "")
   subnet_flag=$([[ ! -z "${subnet}"  ]] && echo "--subnet=${subnet}" || echo "")
-  gpu_flag=$([[ ! -z "${gpu}"  ]] && echo "--accelerator=\"${gpu}\" --maintenance-policy=TERMINATE" || echo "")
+  # gpu_flag=$([[ ! -z "${gpu}"  ]] && echo "--accelerator=\"${gpu}\" --maintenance-policy=TERMINATE" || echo "")
+  gpu_flag=$([[ ! -z "${gpu}"  ]] && echo "--accelerator=${gpu} --maintenance-policy=TERMINATE" || echo "")
   maintenance_policy_flag=$([[ -z "${maintenance_policy_terminate}"  ]] || echo "--maintenance-policy=TERMINATE" )
 
   echo "The new GCE VM will be ${VM_ID}"
