@@ -37,6 +37,7 @@ preemptible=
 ephemeral=
 no_external_address=
 actions_preinstalled=
+maintenance_policy_terminate=
 arm=
 
 OPTLIND=1
@@ -63,6 +64,7 @@ while getopts_long :h opt \
   no_external_address required_argument \
   actions_preinstalled required_argument \
   arm required_argument \
+  maintenance_policy_terminate optional_argument \
   help no_argument "" "$@"
 do
   case "$opt" in
@@ -129,6 +131,9 @@ do
     actions_preinstalled)
       actions_preinstalled=$OPTLARG
       ;;
+    maintenance_policy_terminate)
+      maintenance_policy_terminate=${OPTLARG-$maintenance_policy_terminate}
+      ;;
     arm)
       arm=$OPTLARG
       ;;
@@ -176,7 +181,8 @@ function start_vm {
   no_external_address_flag=$([[ "${no_external_address}" == "true" ]] && echo "--no-address" || echo "")
   network_flag=$([[ ! -z "${network}"  ]] && echo "--network=${network}" || echo "")
   subnet_flag=$([[ ! -z "${subnet}"  ]] && echo "--subnet=${subnet}" || echo "")
-  gpu_flag=$([[ ! -z "${gpu}"  ]] && echo "--accelerator=\"${gpu}\"" || echo "")
+  gpu_flag=$([[ ! -z "${gpu}"  ]] && echo "--accelerator=\"${gpu}\" --maintenance-policy=TERMINATE" || echo "")
+  maintenance_policy_flag=$([[ -z "${maintenance_policy_terminate}"  ]] || echo "--maintenance-policy=TERMINATE" )
 
   echo "The new GCE VM will be ${VM_ID}"
 
@@ -232,6 +238,7 @@ function start_vm {
     ${no_external_address_flag} \
     ${subnet_flag} \
     ${gpu_flag} \
+    ${maintenance_policy_flag} \
     --labels=gh_ready=0 \
     --metadata=startup-script=\"$startup_script\" \
     && echo "label=${VM_ID}" >> $GITHUB_OUTPUT
