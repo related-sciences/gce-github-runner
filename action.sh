@@ -200,7 +200,6 @@ function start_vm {
   else
     echo "✅ Startup script will install GitHub Actions"
     if $arm ; then
-      curl -o actions-runner-linux-arm64-2.303.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.303.0/actions-runner-linux-arm64-2.303.0.tar.gz
       startup_script="#!/bin/bash
       mkdir /actions-runner
       cd /actions-runner
