@@ -96,6 +96,9 @@ inputs:
     description: "Whether the GitHub actions should use arm64 binaries."
     default: false
     required: false
+  maintenance_policy_terminate:
+    description: "Set Google maintenance policy to TERMINATE.  This is required for GPUs as they do ot support live-migration."
+    required: false
 outputs:
   label:
     description: >-
@@ -129,5 +132,6 @@ runs:
         --ephemeral=${{ inputs.ephemeral }}
         --no_external_address=${{ inputs.no_external_address }}
         --actions_preinstalled=${{ inputs.actions_preinstalled }}
+        --maintenance_policy_terminate=${{ inputs.maintenance_policy_terminate }}
         --arm=${{ inputs.arm }}
       shell: bash
