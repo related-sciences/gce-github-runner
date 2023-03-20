@@ -218,6 +218,25 @@ function start_vm {
     fi
   fi
 
+  echo " 
+  CMD = gcloud compute instances create ${VM_ID} \
+    --zone=${machine_zone} \
+    ${disk_size_flag} \
+    --machine-type=${machine_type} \
+    --scopes=${scopes} \
+    ${service_account_flag} \
+    ${image_project_flag} \
+    ${image_flag} \
+    ${image_family_flag} \
+    ${preemptible_flag} \
+    ${no_external_address_flag} \
+    ${subnet_flag} \
+    ${gpu_flag} \
+    --labels=gh_ready=0 \
+    --metadata=startup-script=\"$startup_script\" \
+    && echo "label=${VM_ID}" >> $GITHUB_OUTPUT
+  "
+
   gcloud compute instances create ${VM_ID} \
     --zone=${machine_zone} \
     ${disk_size_flag} \
