@@ -77,6 +77,8 @@ inputs:
     description: "Whether the GitHub actions have already been installed at `/actions-runner`."
     default: false
     required: true
+  boot_disk_type:
+    description: "Boot disk type for the GCE instance (https://cloud.google.com/sdk/gcloud/reference/compute/disk-types/list)"
 outputs:
   label:
     description: >-
@@ -103,6 +105,7 @@ runs:
         --image_project=${{ inputs.image_project }}
         --image=${{ inputs.image }}
         --image_family=${{ inputs.image_family }}
+        --boot_disk_type=${{ inputs.boot_disk_type }}
         --preemptible=${{ inputs.preemptible }}
         --ephemeral=${{ inputs.ephemeral }}
         --no_external_address=${{ inputs.no_external_address }}
