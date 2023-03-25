@@ -164,14 +164,31 @@ function start_vm {
   echo "The new GCE VM will be ${VM_ID}"
 
   startup_script="
-    apt update && apt install -y at && \\
+# Create a systemd service in charge of shutting down the machine once the workflow has finished
+cat > /etc/systemd/system/shutdown.sh << EOF
+#!/bin/sh
+sleep ${shutdown_timeout}
+gcloud compute instances delete $VM_ID --zone=$machine_zone --quiet
+EOF
+cat > /etc/systemd/system/shutdown.service << EOF1
+[Unit]
+Description=Shutdown service
+[Service]
+ExecStart=/etc/systemd/system/shutdown.sh
+[Install]
+WantedBy=multi-user.target
+EOF1
+chmod +x /etc/systemd/system/shutdown.sh
+systemctl daemon-reload
+systemctl enable shutdown.service
+
     gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=0 && \\
     RUNNER_ALLOW_RUNASROOT=1 ./config.sh --url https://github.com/${GITHUB_REPOSITORY} --token ${RUNNER_TOKEN} --labels ${VM_ID} --unattended ${ephemeral_flag} --disableupdate && \\
     ./svc.sh install && \\
     ./svc.sh start && \\
     gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=1
     # 3 days represents the max workflow runtime. This will shutdown the instance if everything else fails.
-    echo \"gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone}\" | at now + 3 days
+    nohup sh -c \"sleep 3d && gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone}\" > /dev/null &
     "
 
   if $actions_preinstalled ; then
@@ -234,7 +251,8 @@ function stop_vm {
   NAME=$(curl -S -s -X GET http://metadata.google.internal/computeMetadata/v1/instance/name -H 'Metadata-Flavor: Google')
   ZONE=$(curl -S -s -X GET http://metadata.google.internal/computeMetadata/v1/instance/zone -H 'Metadata-Flavor: Google')
   echo "✅ Self deleting $NAME in $ZONE in ${shutdown_timeout} seconds ..."
-  echo "sleep ${shutdown_timeout}; gcloud --quiet compute instances delete $NAME --zone=$ZONE" | env at now
+  # We tear down the machine by starting the systemd service that was registered by the startup script
+  systemctl start shutdown.service
 }
 
 safety_on
