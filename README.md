@@ -44,7 +44,6 @@ See inputs and descriptions [here](./action.yml).
 The GCE runner image should have at least:
  * `gcloud`
  * `git`
- * `at`
  * (optionally) GitHub Actions Runner (see `actions_preinstalled` parameter)
 
 ## Example Workflows
