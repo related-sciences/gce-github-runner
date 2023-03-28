@@ -258,6 +258,7 @@ function start_vm {
     ${no_external_address_flag} \
     ${subnet_flag} \
     ${gpu_flag} \
+    ${maintenance_policy_flag} \
     --labels=gh_ready=0 \
     --metadata=startup-script="$startup_script" \
     && echo "label=${VM_ID}" >> $GITHUB_OUTPUT
