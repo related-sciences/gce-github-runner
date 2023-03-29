@@ -35,6 +35,7 @@ preemptible=
 ephemeral=
 no_external_address=
 actions_preinstalled=
+accelerator_type=
 
 OPTLIND=1
 while getopts_long :h opt \
@@ -57,6 +58,7 @@ while getopts_long :h opt \
   ephemeral required_argument \
   no_external_address required_argument \
   actions_preinstalled required_argument \
+  accelerator_type optional_argument \
   help no_argument "" "$@"
 do
   case "$opt" in
@@ -117,6 +119,9 @@ do
     actions_preinstalled)
       actions_preinstalled=$OPTLARG
       ;;
+    accelerator_type)
+      accelerator_type=$OPTLARG
+      ;;      
     h|help)
       usage
       exit 0
@@ -160,6 +165,8 @@ function start_vm {
   preemptible_flag=$([[ "${preemptible}" == "true" ]] && echo "--preemptible" || echo "")
   ephemeral_flag=$([[ "${ephemeral}" == "true" ]] && echo "--ephemeral" || echo "")
   no_external_address_flag=$([[ "${no_external_address}" == "true" ]] && echo "--no-address" || echo "")
+  # Instances with guest accelerators do not support live migrations, --maintenance-policy is needed
+  accelerator_type=$([[ -z "${accelerator_type}" ]] || echo "--accelerator type=${accelerator_type} --maintenance-policy TERMINATE")
 
   echo "The new GCE VM will be ${VM_ID}"
 
@@ -219,6 +226,7 @@ systemctl enable shutdown.service
     ${image_family_flag} \
     ${preemptible_flag} \
     ${no_external_address_flag} \
+    ${accelerator_type} \
     --labels=gh_ready=0 \
     --metadata=startup-script="$startup_script" \
     && echo "label=${VM_ID}" >> $GITHUB_OUTPUT

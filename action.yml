@@ -79,6 +79,9 @@ inputs:
     required: true
   boot_disk_type:
     description: "Boot disk type for the GCE instance (https://cloud.google.com/sdk/gcloud/reference/compute/disk-types/list)"
+  accelerator_type:
+    description: "Type of accelerator (e.g a GPU) to attach to the GCE instance"
+    required: false
 outputs:
   label:
     description: >-
@@ -110,4 +113,5 @@ runs:
         --ephemeral=${{ inputs.ephemeral }}
         --no_external_address=${{ inputs.no_external_address }}
         --actions_preinstalled=${{ inputs.actions_preinstalled }}
+        --accelerator_type=${{ inputs.accelerator_type }}
       shell: bash
