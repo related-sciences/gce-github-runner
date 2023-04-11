@@ -29,13 +29,17 @@ runner_service_account=
 image_project=
 image=
 image_family=
+network=
 scopes=
 shutdown_timeout=
+subnet=
 preemptible=
 ephemeral=
 no_external_address=
 actions_preinstalled=
-accelerator_type=
+maintenance_policy_terminate=
+arm=
+accelerator=
 
 OPTLIND=1
 while getopts_long :h opt \
@@ -52,13 +56,17 @@ while getopts_long :h opt \
   image_project optional_argument \
   image optional_argument \
   image_family optional_argument \
+  network optional_argument \
   scopes required_argument \
   shutdown_timeout required_argument \
+  subnet optional_argument \
   preemptible required_argument \
   ephemeral required_argument \
   no_external_address required_argument \
   actions_preinstalled required_argument \
-  accelerator_type optional_argument \
+  arm required_argument \
+  maintenance_policy_terminate optional_argument \
+  accelerator optional_argument \
   help no_argument "" "$@"
 do
   case "$opt" in
@@ -101,11 +109,17 @@ do
     image_family)
       image_family=${OPTLARG-$image_family}
       ;;
+    network)
+      network=${OPTLARG-$network}
+      ;;
     scopes)
       scopes=$OPTLARG
       ;;
     shutdown_timeout)
       shutdown_timeout=$OPTLARG
+      ;;
+    subnet)
+      subnet=${OPTLARG-$subnet}
       ;;
     preemptible)
       preemptible=$OPTLARG
@@ -119,8 +133,14 @@ do
     actions_preinstalled)
       actions_preinstalled=$OPTLARG
       ;;
-    accelerator_type)
-      accelerator_type=$OPTLARG
+    maintenance_policy_terminate)
+      maintenance_policy_terminate=${OPTLARG-$maintenance_policy_terminate}
+      ;;
+    arm)
+      arm=$OPTLARG
+      ;;
+    accelerator)
+      accelerator=$OPTLARG
       ;;      
     h|help)
       usage
@@ -165,8 +185,10 @@ function start_vm {
   preemptible_flag=$([[ "${preemptible}" == "true" ]] && echo "--preemptible" || echo "")
   ephemeral_flag=$([[ "${ephemeral}" == "true" ]] && echo "--ephemeral" || echo "")
   no_external_address_flag=$([[ "${no_external_address}" == "true" ]] && echo "--no-address" || echo "")
-  # Instances with guest accelerators do not support live migrations, --maintenance-policy is needed
-  accelerator_type=$([[ -z "${accelerator_type}" ]] || echo "--accelerator type=${accelerator_type} --maintenance-policy TERMINATE")
+  network_flag=$([[ ! -z "${network}"  ]] && echo "--network=${network}" || echo "")
+  subnet_flag=$([[ ! -z "${subnet}"  ]] && echo "--subnet=${subnet}" || echo "")
+  accelerator=$([[ ! -z "${accelerator}"  ]] && echo "--accelerator=${accelerator} --maintenance-policy=TERMINATE" || echo "")
+  maintenance_policy_flag=$([[ -z "${maintenance_policy_terminate}"  ]] || echo "--maintenance-policy=TERMINATE" )
 
   echo "The new GCE VM will be ${VM_ID}"
 
@@ -205,13 +227,23 @@ systemctl enable shutdown.service
     $startup_script"
   else
     echo "✅ Startup script will install GitHub Actions"
-    startup_script="#!/bin/bash
-    mkdir /actions-runner
-    cd /actions-runner
-    curl -o actions-runner-linux-x64-${runner_ver}.tar.gz -L https://github.com/actions/runner/releases/download/v${runner_ver}/actions-runner-linux-x64-${runner_ver}.tar.gz
-    tar xzf ./actions-runner-linux-x64-${runner_ver}.tar.gz
-    ./bin/installdependencies.sh && \\
-    $startup_script"
+    if $arm ; then
+      startup_script="#!/bin/bash
+      mkdir /actions-runner
+      cd /actions-runner
+      curl -o actions-runner-linux-arm64-${runner_ver}.tar.gz -L https://github.com/actions/runner/releases/download/v${runner_ver}/actions-runner-linux-arm64-${runner_ver}.tar.gz
+      tar xzf ./actions-runner-linux-arm64-${runner_ver}.tar.gz
+      ./bin/installdependencies.sh && \\
+      $startup_script"
+    else
+      startup_script="#!/bin/bash
+      mkdir /actions-runner
+      cd /actions-runner
+      curl -o actions-runner-linux-x64-${runner_ver}.tar.gz -L https://github.com/actions/runner/releases/download/v${runner_ver}/actions-runner-linux-x64-${runner_ver}.tar.gz
+      tar xzf ./actions-runner-linux-x64-${runner_ver}.tar.gz
+      ./bin/installdependencies.sh && \\
+      $startup_script"
+    fi
   fi
 
   gcloud compute instances create ${VM_ID} \
@@ -226,13 +258,15 @@ systemctl enable shutdown.service
     ${image_family_flag} \
     ${preemptible_flag} \
     ${no_external_address_flag} \
-    ${accelerator_type} \
+    ${subnet_flag} \
+    ${accelerator} \
+    ${maintenance_policy_flag} \
     --labels=gh_ready=0 \
     --metadata=startup-script="$startup_script" \
     && echo "label=${VM_ID}" >> $GITHUB_OUTPUT
 
   safety_off
-  while (( i++ < 24 )); do
+  while (( i++ < 60 )); do
     GH_READY=$(gcloud compute instances describe ${VM_ID} --zone=${machine_zone} --format='json(labels)' | jq -r .labels.gh_ready)
     if [[ $GH_READY == 1 ]]; then
       break
@@ -243,7 +277,7 @@ systemctl enable shutdown.service
   if [[ $GH_READY == 1 ]]; then
     echo "✅ ${VM_ID} ready ..."
   else
-    echo "Waited 2 minutes for ${VM_ID}, without luck, deleting ${VM_ID} ..."
+    echo "Waited 5 minutes for ${VM_ID}, without luck, deleting ${VM_ID} ..."
     gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone}
     exit 1
   fi
