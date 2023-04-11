@@ -15,7 +15,7 @@ jobs:
       label: ${{ steps.create-runner.outputs.label }}
     steps:
       - id: create-runner
-        uses: related-sciences/gce-github-runner@v0.4
+        uses: related-sciences/gce-github-runner@v0.6
         with:
           token: ${{ secrets.GH_SA_TOKEN }}
           project_id: ${{ secrets.GCP_PROJECT_ID }}
@@ -28,7 +28,7 @@ jobs:
     runs-on: ${{ needs.create-runner.outputs.label }}
     steps:
       - run: echo "This runs on the GCE VM"
-      - uses: related-sciences/gce-github-runner@v0.4
+      - uses: related-sciences/gce-github-runner@v0.6
         with:
           command: stop
         if: always()
@@ -44,7 +44,6 @@ See inputs and descriptions [here](./action.yml).
 The GCE runner image should have at least:
  * `gcloud`
  * `git`
- * `at`
  * (optionally) GitHub Actions Runner (see `actions_preinstalled` parameter)
 
 ## Example Workflows

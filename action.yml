@@ -45,13 +45,15 @@ inputs:
   subnet:
     description: Specifies the subnet that the VM instances are a part of (must be part of network).
     required: false
-  gpu:
+  accelerator:
     description: >
       [count=COUNT],[type=TYPE]
         Attaches accelerators (e.g. GPUs) to the instances.
-        type
-        The specific type (e.g. nvidia-tesla-k80 for nVidia Tesla K80) of accelerator to attach to the instances. Use 'gcloud compute accelerator-types list' to learn about all available accelerator types.
-        count
+        TYPE
+        The specific type (e.g. nvidia-tesla-k80 for nVidia Tesla K80) of accelerator 
+        to attach to the instances. Use 'gcloud compute accelerator-types list' to 
+        learn about all available accelerator types.
+        COUNT
         Number of accelerators to attach to each instance. The default value is 1.
     required: false
   runner_service_account:
@@ -98,6 +100,8 @@ inputs:
     required: false
   maintenance_policy_terminate:
     description: "Set Google maintenance policy to TERMINATE.  This is required for GPUs as they do ot support live-migration."
+  boot_disk_type:
+    description: "Boot disk type for the GCE instance (https://cloud.google.com/sdk/gcloud/reference/compute/disk-types/list)"
     required: false
 outputs:
   label:
@@ -120,7 +124,7 @@ runs:
         --machine_type=${{ inputs.machine_type }}
         --network=${{ inputs.network }}
         --subnet=${{ inputs.subnet }}
-        --gpu=${{ inputs.gpu }}
+        --accelerator=${{ inputs.accelerator }}
         --disk_size=${{ inputs.disk_size }}
         --scopes=${{ inputs.scopes }}
         --shutdown_timeout=${{ inputs.shutdown_timeout }}
@@ -128,6 +132,7 @@ runs:
         --image_project=${{ inputs.image_project }}
         --image=${{ inputs.image }}
         --image_family=${{ inputs.image_family }}
+        --boot_disk_type=${{ inputs.boot_disk_type }}
         --preemptible=${{ inputs.preemptible }}
         --ephemeral=${{ inputs.ephemeral }}
         --no_external_address=${{ inputs.no_external_address }}

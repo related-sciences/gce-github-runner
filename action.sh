@@ -23,8 +23,8 @@ service_account_key=
 runner_ver=
 machine_zone=
 machine_type=
+boot_disk_type=
 disk_size=
-gpu=
 runner_service_account=
 image_project=
 image=
@@ -39,6 +39,7 @@ no_external_address=
 actions_preinstalled=
 maintenance_policy_terminate=
 arm=
+accelerator=
 
 OPTLIND=1
 while getopts_long :h opt \
@@ -49,8 +50,8 @@ while getopts_long :h opt \
   runner_ver required_argument \
   machine_zone required_argument \
   machine_type required_argument \
+  boot_disk_type optional_argument \
   disk_size optional_argument \
-  gpu optional_argument \
   runner_service_account optional_argument \
   image_project optional_argument \
   image optional_argument \
@@ -65,6 +66,7 @@ while getopts_long :h opt \
   actions_preinstalled required_argument \
   arm required_argument \
   maintenance_policy_terminate optional_argument \
+  accelerator optional_argument \
   help no_argument "" "$@"
 do
   case "$opt" in
@@ -89,11 +91,11 @@ do
     machine_type)
       machine_type=$OPTLARG
       ;;
+    boot_disk_type)
+      boot_disk_type=${OPTLARG-$boot_disk_type}
+      ;;
     disk_size)
       disk_size=${OPTLARG-$disk_size}
-      ;;
-    gpu)
-      gpu=${OPTLARG-$gpu}
       ;;
     runner_service_account)
       runner_service_account=${OPTLARG-$runner_service_account}
@@ -137,6 +139,9 @@ do
     arm)
       arm=$OPTLARG
       ;;
+    accelerator)
+      accelerator=$OPTLARG
+      ;;      
     h|help)
       usage
       exit 0
@@ -176,18 +181,36 @@ function start_vm {
   image_flag=$([[ -z "${image}" ]] || echo "--image=${image}")
   image_family_flag=$([[ -z "${image_family}" ]] || echo "--image-family=${image_family}")
   disk_size_flag=$([[ -z "${disk_size}" ]] || echo "--boot-disk-size=${disk_size}")
+  boot_disk_type_flag=$([[ -z "${boot_disk_type}" ]] || echo "--boot-disk-type=${boot_disk_type}")
   preemptible_flag=$([[ "${preemptible}" == "true" ]] && echo "--preemptible" || echo "")
   ephemeral_flag=$([[ "${ephemeral}" == "true" ]] && echo "--ephemeral" || echo "")
   no_external_address_flag=$([[ "${no_external_address}" == "true" ]] && echo "--no-address" || echo "")
   network_flag=$([[ ! -z "${network}"  ]] && echo "--network=${network}" || echo "")
   subnet_flag=$([[ ! -z "${subnet}"  ]] && echo "--subnet=${subnet}" || echo "")
-  # gpu_flag=$([[ ! -z "${gpu}"  ]] && echo "--accelerator=\"${gpu}\" --maintenance-policy=TERMINATE" || echo "")
-  gpu_flag=$([[ ! -z "${gpu}"  ]] && echo "--accelerator=${gpu} --maintenance-policy=TERMINATE" || echo "")
+  accelerator=$([[ ! -z "${accelerator}"  ]] && echo "--accelerator=${accelerator} --maintenance-policy=TERMINATE" || echo "")
   maintenance_policy_flag=$([[ -z "${maintenance_policy_terminate}"  ]] || echo "--maintenance-policy=TERMINATE" )
 
   echo "The new GCE VM will be ${VM_ID}"
 
   startup_script="
+# Create a systemd service in charge of shutting down the machine once the workflow has finished
+cat > /etc/systemd/system/shutdown.sh << EOF
+#!/bin/sh
+sleep ${shutdown_timeout}
+gcloud compute instances delete $VM_ID --zone=$machine_zone --quiet
+EOF
+cat > /etc/systemd/system/shutdown.service << EOF1
+[Unit]
+Description=Shutdown service
+[Service]
+ExecStart=/etc/systemd/system/shutdown.sh
+[Install]
+WantedBy=multi-user.target
+EOF1
+chmod +x /etc/systemd/system/shutdown.sh
+systemctl daemon-reload
+systemctl enable shutdown.service
+
     gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=0 && \\
     RUNNER_ALLOW_RUNASROOT=1 ./config.sh --url https://github.com/${GITHUB_REPOSITORY} --token ${RUNNER_TOKEN} --labels ${VM_ID} --unattended ${ephemeral_flag} --disableupdate && \\
     ./svc.sh install && \\
@@ -195,8 +218,8 @@ function start_vm {
     gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=1
     # Install at if not installed
     command -v at >/dev/null 2>&1 ||  apt-get install -y -q at
-    # 1 days represents the max workflow runtime. This will shutdown the instance if everything else fails.
-    echo \"gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone}\" | at now + 1 days
+    # 3 days represents the max workflow runtime. This will shutdown the instance if everything else fails.
+    nohup sh -c \"sleep 3d && gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone}\" > /dev/null &
     "
 
   if $actions_preinstalled ; then
@@ -238,7 +261,7 @@ function start_vm {
     ${preemptible_flag} \
     ${no_external_address_flag} \
     ${subnet_flag} \
-    ${gpu_flag} \
+    ${accelerator} \
     ${maintenance_policy_flag} \
     --labels=gh_ready=0 \
     --metadata=startup-script=\"$startup_script\" \
@@ -248,6 +271,7 @@ function start_vm {
   gcloud compute instances create ${VM_ID} \
     --zone=${machine_zone} \
     ${disk_size_flag} \
+    ${boot_disk_type_flag} \
     --machine-type=${machine_type} \
     --scopes=${scopes} \
     ${service_account_flag} \
@@ -257,7 +281,7 @@ function start_vm {
     ${preemptible_flag} \
     ${no_external_address_flag} \
     ${subnet_flag} \
-    ${gpu_flag} \
+    ${accelerator} \
     ${maintenance_policy_flag} \
     --labels=gh_ready=0 \
     --metadata=startup-script="$startup_script" \
@@ -291,7 +315,8 @@ function stop_vm {
   NAME=$(curl -S -s -X GET http://metadata.google.internal/computeMetadata/v1/instance/name -H 'Metadata-Flavor: Google')
   ZONE=$(curl -S -s -X GET http://metadata.google.internal/computeMetadata/v1/instance/zone -H 'Metadata-Flavor: Google')
   echo "✅ Self deleting $NAME in $ZONE in ${shutdown_timeout} seconds ..."
-  echo "sleep ${shutdown_timeout}; gcloud --quiet compute instances delete $NAME --zone=$ZONE" | env at now
+  # We tear down the machine by starting the systemd service that was registered by the startup script
+  systemctl start shutdown.service
 }
 
 safety_on
