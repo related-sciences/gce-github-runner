@@ -216,8 +216,6 @@ systemctl enable shutdown.service
     ./svc.sh install && \\
     ./svc.sh start && \\
     gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=1
-    # Install at if not installed
-    command -v at >/dev/null 2>&1 ||  apt-get install -y -q at
     # 3 days represents the max workflow runtime. This will shutdown the instance if everything else fails.
     nohup sh -c \"sleep 3d && gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone}\" > /dev/null &
     "
@@ -300,7 +298,7 @@ systemctl enable shutdown.service
     echo "✅ ${VM_ID} ready ..."
   else
     echo "Waited 5 minutes for ${VM_ID}, without luck, deleting ${VM_ID} ..."
-    # gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone}
+    gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone}
     exit 1
   fi
 }
