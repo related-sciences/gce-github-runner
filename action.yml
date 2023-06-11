@@ -7,10 +7,6 @@ branding:
   icon: triangle
   color: purple
 inputs:
-  command:
-    description: "`start` or `stop` of the runner"
-    default: start
-    required: true
   token:
     description: >-
       GitHub auth token, needs `repo`/`public_repo` scope: https://docs.github.com/en/rest/reference/actions#self-hosted-runners.
@@ -26,7 +22,7 @@ inputs:
     required: false
   runner_ver:
     description: Version of the GitHub Runner.
-    default: "2.303.0"
+    default: "2.304.0"
     required: true
   machine_zone:
     description: GCE zone
@@ -87,7 +83,7 @@ inputs:
     default: cloud-platform
     required: true
   shutdown_timeout:
-    description: "Grace period for the `stop` command, in seconds."
+    description: "Shutdown grace period (in seconds)."
     default: 30
     required: true
   actions_preinstalled:
@@ -115,7 +111,7 @@ runs:
     - id: gce-github-runner-script
       run: >
         ${{ github.action_path }}/action.sh
-        --command=${{ inputs.command }}
+        --command=start
         --token=${{ inputs.token }}
         --project_id=${{ inputs.project_id }}
         --service_account_key='${{ inputs.service_account_key }}'
