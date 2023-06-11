@@ -30,7 +30,3 @@ jobs:
     runs-on: ${{ needs.create-runner.outputs.label }}
     steps:
       - run: echo "This runs on the GCE runner VM"
-      - uses: related-sciences/gce-github-runner@main
-        with:
-          command: stop
-        if: always()

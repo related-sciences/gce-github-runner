@@ -18,7 +18,7 @@ on:
         description: Service account of the VM, defaults to default compute service account.
         required: false
       shutdown_timeout:
-        description: "Grace period for the `stop` command, in seconds."
+        description: "Shutdown grace period (in seconds)."
         default: 30
         required: true
       no_external_address:
@@ -50,14 +50,10 @@ jobs:
           image_family: ubuntu-2004-lts
           no_external_address: ${{ inputs.no_external_address }}
           actions_preinstalled: ${{ inputs.actions_preinstalled }}
+          shutdown_timeout: ${{ inputs.shutdown_timeout }}
 
   test:
     needs: create-runner
     runs-on: ${{ needs.create-runner.outputs.label }}
     steps:
       - run: echo "This runs on the GCE runner VM"
-      - uses: related-sciences/gce-github-runner@main
-        with:
-          command: stop
-          shutdown_timeout: ${{ inputs.shutdown_timeout }}
-        if: always()

@@ -28,14 +28,11 @@ jobs:
     runs-on: ${{ needs.create-runner.outputs.label }}
     steps:
       - run: echo "This runs on the GCE VM"
-      - uses: related-sciences/gce-github-runner@v0.7
-        with:
-          command: stop
-        if: always()
 ```
 
  * `create-runner` creates the GCE VM and registers the runner with unique label
- * `test` uses the runner, and destroys it as the last step
+ * `test` uses the runner
+ * the runner VM will be automatically shut down after the workflow via [self-hosted runner hook](https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/running-scripts-before-or-after-a-job)
 
 ## Inputs
 
