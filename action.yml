@@ -99,6 +99,10 @@ inputs:
   boot_disk_type:
     description: "Boot disk type for the GCE instance (https://cloud.google.com/sdk/gcloud/reference/compute/disk-types/list)"
     required: false
+  num_instances:
+    description: "The number of instances to create"
+    default: 1
+    required: true
 outputs:
   label:
     description: >-
@@ -135,4 +139,5 @@ runs:
         --actions_preinstalled=${{ inputs.actions_preinstalled }}
         --maintenance_policy_terminate=${{ inputs.maintenance_policy_terminate }}
         --arm=${{ inputs.arm }}
+        --num_instances=${{ inputs.num_instances }}
       shell: bash
