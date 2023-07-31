@@ -68,7 +68,7 @@ while getopts_long :h opt \
   arm required_argument \
   maintenance_policy_terminate optional_argument \
   accelerator optional_argument \
-  num_instances required argument \
+  num_instances required_argument \
   help no_argument "" "$@"
 do
   case "$opt" in
