@@ -199,11 +199,12 @@ function start_vm {
   echo "The new GCE VM will be ${VM_ID}"
 
   startup_script="
+	# Get the node's hostname
 	# Create a systemd service in charge of shutting down the machine once the workflow has finished
 	cat <<-EOF > /etc/systemd/system/shutdown.sh
 	#!/bin/sh
 	sleep ${shutdown_timeout}
-	gcloud compute instances delete $hostname --zone=$machine_zone --quiet
+	gcloud compute instances delete $(hostname) --zone=$machine_zone --quiet
 	EOF
 
 	cat <<-EOF > /etc/systemd/system/shutdown.service
@@ -221,20 +222,20 @@ function start_vm {
 
 	cat <<-EOF > /usr/bin/gce_runner_shutdown.sh
 	#!/bin/sh
-	echo \"✅ Self deleting $hostname in ${machine_zone} in ${shutdown_timeout} seconds ...\"
+	echo \"✅ Self deleting $(hostname) in ${machine_zone} in ${shutdown_timeout} seconds ...\"
 	# We tear down the machine by starting the systemd service that was registered by the startup script
 	systemctl start shutdown.service
 	EOF
 
 	# See: https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/running-scripts-before-or-after-a-job
 	echo "ACTIONS_RUNNER_HOOK_JOB_COMPLETED=/usr/bin/gce_runner_shutdown.sh" >.env
-	gcloud compute instances add-labels $hostname --zone=${machine_zone} --labels=gh_ready=0 && \\
+	gcloud compute instances add-labels $(hostname) --zone=${machine_zone} --labels=gh_ready=0 && \\
 	RUNNER_ALLOW_RUNASROOT=1 ./config.sh --url https://github.com/${GITHUB_REPOSITORY} --token ${RUNNER_TOKEN} --labels ${VM_ID} --unattended ${ephemeral_flag} --disableupdate && \\
 	./svc.sh install && \\
 	./svc.sh start && \\
-	gcloud compute instances add-labels $hostname --zone=${machine_zone} --labels=gh_ready=1
+	gcloud compute instances add-labels $(hostname) --zone=${machine_zone} --labels=gh_ready=1
 	# 3 days represents the max workflow runtime. This will shutdown the instance if everything else fails.
-	nohup sh -c \"sleep 3d && gcloud --quiet compute instances delete $hostname --zone=${machine_zone}\" > /dev/null &
+	nohup sh -c \"sleep 3d && gcloud --quiet compute instances delete $(hostname) --zone=${machine_zone}\" > /dev/null &
   "
 
   if $actions_preinstalled ; then
