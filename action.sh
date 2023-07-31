@@ -40,6 +40,7 @@ actions_preinstalled=
 maintenance_policy_terminate=
 arm=
 accelerator=
+num_instances=
 
 OPTLIND=1
 while getopts_long :h opt \
@@ -67,6 +68,7 @@ while getopts_long :h opt \
   arm required_argument \
   maintenance_policy_terminate optional_argument \
   accelerator optional_argument \
+  num_instances required argument \
   help no_argument "" "$@"
 do
   case "$opt" in
@@ -139,6 +141,9 @@ do
     arm)
       arm=$OPTLARG
       ;;
+    num_instances)
+      num_instances=$OPTLARG
+      ;;
     accelerator)
       accelerator=$OPTLARG
       ;;      
@@ -190,6 +195,7 @@ function start_vm {
   accelerator=$([[ ! -z "${accelerator}"  ]] && echo "--accelerator=${accelerator} --maintenance-policy=TERMINATE" || echo "")
   maintenance_policy_flag=$([[ -z "${maintenance_policy_terminate}"  ]] || echo "--maintenance-policy=TERMINATE" )
 
+
   echo "The new GCE VM will be ${VM_ID}"
 
   startup_script="
@@ -197,7 +203,7 @@ function start_vm {
 	cat <<-EOF > /etc/systemd/system/shutdown.sh
 	#!/bin/sh
 	sleep ${shutdown_timeout}
-	gcloud compute instances delete $VM_ID --zone=$machine_zone --quiet
+	gcloud compute instances delete $hostname --zone=$machine_zone --quiet
 	EOF
 
 	cat <<-EOF > /etc/systemd/system/shutdown.service
@@ -215,20 +221,20 @@ function start_vm {
 
 	cat <<-EOF > /usr/bin/gce_runner_shutdown.sh
 	#!/bin/sh
-	echo \"✅ Self deleting $VM_ID in ${machine_zone} in ${shutdown_timeout} seconds ...\"
+	echo \"✅ Self deleting $hostname in ${machine_zone} in ${shutdown_timeout} seconds ...\"
 	# We tear down the machine by starting the systemd service that was registered by the startup script
 	systemctl start shutdown.service
 	EOF
 
 	# See: https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/running-scripts-before-or-after-a-job
 	echo "ACTIONS_RUNNER_HOOK_JOB_COMPLETED=/usr/bin/gce_runner_shutdown.sh" >.env
-	gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=0 && \\
+	gcloud compute instances add-labels $hostname --zone=${machine_zone} --labels=gh_ready=0 && \\
 	RUNNER_ALLOW_RUNASROOT=1 ./config.sh --url https://github.com/${GITHUB_REPOSITORY} --token ${RUNNER_TOKEN} --labels ${VM_ID} --unattended ${ephemeral_flag} --disableupdate && \\
 	./svc.sh install && \\
 	./svc.sh start && \\
-	gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=1
+	gcloud compute instances add-labels $hostname --zone=${machine_zone} --labels=gh_ready=1
 	# 3 days represents the max workflow runtime. This will shutdown the instance if everything else fails.
-	nohup sh -c \"sleep 3d && gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone}\" > /dev/null &
+	nohup sh -c \"sleep 3d && gcloud --quiet compute instances delete $hostname --zone=${machine_zone}\" > /dev/null &
   "
 
   if $actions_preinstalled ; then
@@ -257,7 +263,8 @@ function start_vm {
     fi
   fi
 
-  gcloud compute instances create ${VM_ID} \
+  gcloud compute instances bulk create "${VM_ID}-#" \
+    --count=${num_instances} \
     --zone=${machine_zone} \
     ${disk_size_flag} \
     ${boot_disk_type_flag} \
@@ -272,26 +279,30 @@ function start_vm {
     ${subnet_flag} \
     ${accelerator} \
     ${maintenance_policy_flag} \
-    --labels=gh_ready=0 \
+    ${num_instances_flag} \
+    --labels=gh_ready=0,vm_id=${VM_ID} \
     --metadata=startup-script="$startup_script" \
     && echo "label=${VM_ID}" >> $GITHUB_OUTPUT
 
   safety_off
-  while (( i++ < 60 )); do
-    GH_READY=$(gcloud compute instances describe ${VM_ID} --zone=${machine_zone} --format='json(labels)' | jq -r .labels.gh_ready)
+  launched_instances=$(gcloud compute instances list --filter "labels.owner=platform" --format='get(name)')
+  for instance in $launched_instances; do
+    while (( i++ < 60 )); do
+      GH_READY=$(gcloud compute instances describe ${instance} --zone=${machine_zone} --format='json(labels)' | jq -r .labels.gh_ready)
+      if [[ $GH_READY == 1 ]]; then
+        break
+      fi
+      echo "${instance} not ready yet, waiting 5 secs ..."
+      sleep 5
+    done
     if [[ $GH_READY == 1 ]]; then
-      break
+      echo "✅ ${instance} ready ..."
+    else
+      echo "Waited 5 minutes for ${instance}, without luck, deleting ${instance} ..."
+      gcloud --quiet compute instances delete ${instance} --zone=${machine_zone}
+      exit 1
     fi
-    echo "${VM_ID} not ready yet, waiting 5 secs ..."
-    sleep 5
   done
-  if [[ $GH_READY == 1 ]]; then
-    echo "✅ ${VM_ID} ready ..."
-  else
-    echo "Waited 5 minutes for ${VM_ID}, without luck, deleting ${VM_ID} ..."
-    gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone}
-    exit 1
-  fi
 }
 
 safety_on
