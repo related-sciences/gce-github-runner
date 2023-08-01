@@ -301,6 +301,16 @@ function start_vm {
     else
       echo "Waited 5 minutes for ${instance}, without luck, deleting ${instance} ..."
       gcloud --quiet compute instances delete ${instance} --zone=${machine_zone}
+
+      # NOTE: if one instance fails and then we exit, we also need to clean up any other
+      # launched instances
+      for extra_instance in $launched_instances; do
+        if [[ $extra_instance != $instance ]]; then
+          echo "Deleting ${extra_instance} ..."
+          gcloud --quiet compute instances delete ${extra_instance} --zone=${machine_zone}
+        fi
+      done
+
       exit 1
     fi
   done
