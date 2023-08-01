@@ -264,7 +264,8 @@ function start_vm {
     fi
   fi
 
-  gcloud compute instances bulk create "${VM_ID}-#" \
+  gcloud compute instances bulk create \
+    --name-pattern="${VM_ID}-#" \
     --count=${num_instances} \
     --zone=${machine_zone} \
     ${disk_size_flag} \
