@@ -286,7 +286,7 @@ function start_vm {
     && echo "label=${VM_ID}" >> $GITHUB_OUTPUT
 
   safety_off
-  launched_instances=$(gcloud compute instances list --filter "labels.owner=platform" --format='get(name)')
+  launched_instances=$(gcloud compute instances list --filter "labels.vm_id=${VM_ID}" --format='get(name)')
   for instance in $launched_instances; do
     while (( i++ < 60 )); do
       GH_READY=$(gcloud compute instances describe ${instance} --zone=${machine_zone} --format='json(labels)' | jq -r .labels.gh_ready)
