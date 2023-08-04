@@ -146,7 +146,7 @@ do
       ;;
     accelerator)
       accelerator=$OPTLARG
-      ;;      
+      ;;
     h|help)
       usage
       exit 0
@@ -269,6 +269,7 @@ function start_vm {
   gcloud compute instances bulk create \
     --name-pattern="${VM_ID}-#" \
     --count=${num_instances} \
+    --min-count=${num_instances} \
     --zone=${machine_zone} \
     ${disk_size_flag} \
     ${boot_disk_type_flag} \
