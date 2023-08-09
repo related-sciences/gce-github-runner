@@ -285,8 +285,9 @@ function start_vm {
     ${accelerator} \
     ${maintenance_policy_flag} \
     --labels=gh_ready=0,vm_id=${VM_ID} \
-    --metadata=startup-script="$startup_script" \
-    && echo "label=${VM_ID}" >> $GITHUB_OUTPUT
+    --metadata=startup-script="$startup_script"
+ 
+  echo "label=${VM_ID}" >> $GITHUB_OUTPUT
 
   safety_off
   launched_instances=$(gcloud compute instances list --filter "labels.vm_id=${VM_ID}" --format='get(name)')
