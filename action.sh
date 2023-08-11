@@ -204,7 +204,7 @@ function start_vm {
 	#!/bin/sh
 	sleep ${shutdown_timeout}
 	instance=\$(hostname)
-	gcloud compute instances delete \${instance} --zone=$machine_zone --quiet
+	gcloud compute instances delete \\\${instance} --zone=$machine_zone --quiet
 	EOF
 
 	cat <<-EOF > /etc/systemd/system/shutdown.service
@@ -223,7 +223,7 @@ function start_vm {
 	cat <<-EOF > /usr/bin/gce_runner_shutdown.sh
 	#!/bin/sh
 	instance=\$(hostname)
-	echo \"✅ Self deleting \${instance} in ${machine_zone} in ${shutdown_timeout} seconds ...\"
+	echo \"✅ Self deleting \\\${instance} in ${machine_zone} in ${shutdown_timeout} seconds ...\"
 	# We tear down the machine by starting the systemd service that was registered by the startup script
 	systemctl start shutdown.service
 	EOF
