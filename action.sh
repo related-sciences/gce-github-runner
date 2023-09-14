@@ -237,7 +237,12 @@ function start_vm {
     cd /actions-runner
     $startup_script"
   else
-    echo "✅ Startup script will install GitHub Actions"
+    if [[ "$runner_ver" = "latest" ]]; then
+      latest_ver=$(curl -sL https://api.github.com/repos/actions/runner/releases/latest | jq -r '.tag_name' | sed -e 's/^v//')
+      runner_ver="$latest_ver"
+      echo "✅ runner_ver=latest is specified. v$latest_ver is detected as the latest version."
+    fi
+    echo "✅ Startup script will install GitHub Actions v$runner_ver"
     if $arm ; then
       startup_script="#!/bin/bash
       mkdir /actions-runner
