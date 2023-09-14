@@ -21,8 +21,8 @@ inputs:
       This key should be created and stored as a secret. Should be JSON key.
     required: false
   runner_ver:
-    description: Version of the GitHub Runner.
-    default: "2.308.0"
+    description: Version of the GitHub Runner. "latest" will resolve the latest version.
+    default: "latest"
     required: true
   machine_zone:
     description: GCE zone
