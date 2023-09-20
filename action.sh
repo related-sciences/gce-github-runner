@@ -169,6 +169,12 @@ function start_vm {
     gcloud_auth
   fi
 
+  IFS=',' read -r -a machine_type_random <<< "$machine_type"
+  IFS=',' read -r -a zone_random <<< "$machine_zone"
+
+  machine_zone=$(printf "%s\n" "${zone_random[@]}" | shuf -n1)
+  machine_type=$(printf "%s\n" "${machine_type_random[@]}" | shuf -n1)
+ 
   RUNNER_TOKEN=$(curl -S -s -XPOST \
       -H "authorization: Bearer ${token}" \
       https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runners/registration-token |\
