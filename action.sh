@@ -261,6 +261,31 @@ function start_vm {
       $startup_script"
     fi
   fi
+  
+  # GCE VM label values requirements:
+  # - can contain only lowercase letters, numeric characters, underscores, and dashes
+  # - have a maximum length of 63 characters
+  # ref: https://cloud.google.com/compute/docs/labeling-resources#requirements
+  #
+  # Github's requirements:
+  # - username/organization name
+  #   - Max length: 39 characters
+  #   - All characters must be either a hyphen (-) or alphanumeric
+  # - repository name
+  #   - Max length: 100 code points
+  #   - All code points must be either a hyphen (-), an underscore (_), a period (.), 
+  #     or an ASCII alphanumeric code point
+  # ref: https://github.com/dead-claudia/github-limits
+  function truncate_to_label {
+    local in="${1}"
+    in="${in:0:63}"                              # ensure max length
+    in="${in//./_}"                              # replace '.' with '_'
+    in=$(tr '[:upper:]' '[:lower:]' <<< "${in}") # convert to lower
+    echo -n "${in}"
+  }
+  gh_repo_owner="$(truncate_to_label "${GITHUB_REPOSITORY_OWNER}")"
+  gh_repo="$(truncate_to_label "${GITHUB_REPOSITORY##*/}")"
+  gh_run_id="${GITHUB_RUN_ID}"
 
   gcloud compute instances create ${VM_ID} \
     --zone=${machine_zone} \
@@ -277,7 +302,7 @@ function start_vm {
     ${subnet_flag} \
     ${accelerator} \
     ${maintenance_policy_flag} \
-    --labels=gh_ready=0 \
+    --labels=gh_ready=0,gh_repo_owner="${gh_repo_owner}",gh_repo="${gh_repo}",gh_run_id="${gh_run_id}" \
     --metadata=startup-script="$startup_script" \
     && echo "label=${VM_ID}" >> $GITHUB_OUTPUT
 
