@@ -5,7 +5,7 @@ on:
     inputs:
       machine_zone:
         description: GCE zone
-        default: "europe-west1-b"
+        default: "us-east1-c"
         required: true
       machine_type:
         description: "GCE machine type: https://cloud.google.com/compute/docs/machine-types"
@@ -37,7 +37,7 @@ jobs:
       label: ${{ steps.create-runner.outputs.label }}
     steps:
       - id: create-runner
-        uses: toufreach5/gce-github-runner@multiple-instances
+        uses: related-sciences/gce-github-runner@main
         with:
           token: ${{ secrets.GH_SA_TOKEN }}
           project_id: ${{ secrets.GCP_PROJECT_ID }}
