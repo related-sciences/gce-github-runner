@@ -197,6 +197,9 @@ function start_vm {
 	cat <<-EOF > /etc/systemd/system/shutdown.sh
 	#!/bin/sh
 	sleep ${shutdown_timeout}
+  cd /actions-runner
+  sudo ./svc.sh uninstall
+  RUNNER_ALLOW_RUNASROOT=1 ./config.sh remove --token ${RUNNER_TOKEN}
 	gcloud compute instances delete $VM_ID --zone=$machine_zone --quiet
 	EOF
 
@@ -215,9 +218,6 @@ function start_vm {
 
 	cat <<-EOF > /usr/bin/gce_runner_shutdown.sh
 	#!/bin/sh
-  cd /actions-runner
-  sudo ./svc.sh uninstall
-  RUNNER_ALLOW_RUNASROOT=1 ./config.sh remove --token ${RUNNER_TOKEN}
 	echo \"✅ Self deleting $VM_ID in ${machine_zone} in ${shutdown_timeout} seconds ...\"
 	# We tear down the machine by starting the systemd service that was registered by the startup script
 	systemctl start shutdown.service
