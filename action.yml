@@ -20,6 +20,8 @@ inputs:
       The service account key which will be used for authentication credentials.
       This key should be created and stored as a secret. Should be JSON key.
     required: false
+  vm_id:
+    required: false
   runner_ver:
     description: Version of the GitHub Runner. "latest" will resolve the latest version.
     default: "latest"
@@ -135,4 +137,5 @@ runs:
         --actions_preinstalled=${{ inputs.actions_preinstalled }}
         --maintenance_policy_terminate=${{ inputs.maintenance_policy_terminate }}
         --arm=${{ inputs.arm }}
+        --vm_id=${{ inputs.vm_id }}
       shell: bash

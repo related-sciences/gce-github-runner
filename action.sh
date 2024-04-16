@@ -40,6 +40,7 @@ actions_preinstalled=
 maintenance_policy_terminate=
 arm=
 accelerator=
+vm_id=
 
 OPTLIND=1
 while getopts_long :h opt \
@@ -67,6 +68,7 @@ while getopts_long :h opt \
   arm required_argument \
   maintenance_policy_terminate optional_argument \
   accelerator optional_argument \
+  vm_id optional_argument \
   help no_argument "" "$@"
 do
   case "$opt" in
@@ -141,7 +143,10 @@ do
       ;;
     accelerator)
       accelerator=$OPTLARG
-      ;;      
+      ;;    
+    vm_id)
+      vm_id=$OPTLARG
+      ;;     
     h|help)
       usage
       exit 0
@@ -175,7 +180,8 @@ function start_vm {
       jq -r .token)
   echo "✅ Successfully got the GitHub Runner registration token"
 
-  VM_ID="gce-gh-runner-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+  vm_suffix=$([[ -z "${vm_id}" ]] || echo "-${vm_id}")
+  VM_ID="gce-gh-runner-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}${vm_suffix}"
   service_account_flag=$([[ -z "${runner_service_account}" ]] || echo "--service-account=${runner_service_account}")
   image_project_flag=$([[ -z "${image_project}" ]] || echo "--image-project=${image_project}")
   image_flag=$([[ -z "${image}" ]] || echo "--image=${image}")
