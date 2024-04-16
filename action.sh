@@ -215,7 +215,7 @@ function start_vm {
 
 	cat <<-EOF > /usr/bin/gce_runner_shutdown.sh
 	#!/bin/sh
-  /actions-runner/config.sh remove --token ${RUNNER_TOKEN}
+  RUNNER_ALLOW_RUNASROOT=1 /actions-runner/config.sh remove --token ${RUNNER_TOKEN}
 	echo \"✅ Self deleting $VM_ID in ${machine_zone} in ${shutdown_timeout} seconds ...\"
 	# We tear down the machine by starting the systemd service that was registered by the startup script
 	systemctl start shutdown.service
