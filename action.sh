@@ -220,6 +220,15 @@ function start_vm {
 	systemctl start shutdown.service
 	EOF
 
+  # Install CUDA if an accelerator is specified
+  if [ ! -z \"${accelerator}\" ]; then
+    mkdir -p /opt/google/cuda-installer
+    cd /opt/google/cuda-installer/ || exit
+
+    curl -fSsL -O https://github.com/GoogleCloudPlatform/compute-gpu-installation/releases/download/cuda-installer-v1.1.0/cuda_installer.pyz
+    python3 cuda_installer.pyz install_cuda
+  fi
+
 	# See: https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/running-scripts-before-or-after-a-job
 	echo "ACTIONS_RUNNER_HOOK_JOB_COMPLETED=/usr/bin/gce_runner_shutdown.sh" >.env
 	gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=0 && \\
