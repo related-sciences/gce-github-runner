@@ -319,7 +319,8 @@ function start_vm {
   safety_off
   $count=70
   $interval=6
-  $minutes=$(( $count * $interval / 60 ))
+  $seconds=$(( $count * $interval ))
+  $minutes=$(( $seconds / 60 ))
   while (( i++ < $count )); do
     GH_READY=$(gcloud compute instances describe ${VM_ID} --zone=${machine_zone} --format='json(labels)' | jq -r .labels.gh_ready)
     if [[ $GH_READY == 1 ]]; then
