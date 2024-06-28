@@ -220,13 +220,9 @@ function start_vm {
 	systemctl start shutdown.service
 	EOF
 
-  # Install CUDA if an accelerator is specified
-  if [ ! -z \"${accelerator}\" ]; then
-    mkdir -p /opt/google/cuda-installer
-    cd /opt/google/cuda-installer/ || exit
-
-    curl -fSsL -O https://github.com/GoogleCloudPlatform/compute-gpu-installation/releases/download/cuda-installer-v1.1.0/cuda_installer.pyz
-    python3 cuda_installer.pyz install_cuda
+  # Install driver if this is a deeplearning image is specified
+  if [ \"${image_project}\" == \"deeplearning-platform-release\" ]; then
+    sudo /opt/deeplearning/install-driver.sh
   fi
 
 	# See: https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/running-scripts-before-or-after-a-job
@@ -321,18 +317,18 @@ function start_vm {
     && echo "label=${VM_ID}" >> $GITHUB_OUTPUT
 
   safety_off
-  while (( i++ < 60 )); do
+  while (( i++ < 70 )); do
     GH_READY=$(gcloud compute instances describe ${VM_ID} --zone=${machine_zone} --format='json(labels)' | jq -r .labels.gh_ready)
     if [[ $GH_READY == 1 ]]; then
       break
     fi
     echo "${VM_ID} not ready yet, waiting 5 secs ..."
-    sleep 5
+    sleep 6
   done
   if [[ $GH_READY == 1 ]]; then
     echo "✅ ${VM_ID} ready ..."
   else
-    echo "Waited 5 minutes for ${VM_ID}, without luck, deleting ${VM_ID} ..."
+    echo "Waited 7 minutes for ${VM_ID}, without luck, deleting ${VM_ID} ..."
     gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone}
     exit 1
   fi
