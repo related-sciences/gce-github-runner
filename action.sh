@@ -299,7 +299,7 @@ function start_vm {
   gh_run_id="${GITHUB_RUN_ID}"
 
   function create_vm {
-    echo "🔄 Attempting creating GCE VM in zone: ${machine_zone}"
+    echo "🔄 Attempting to create VM in zone: ${machine_zone}"
     gcloud compute instances create ${VM_ID} \
       --zone=${machine_zone} \
       ${disk_size_flag} \
