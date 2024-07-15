@@ -160,8 +160,12 @@ function gcloud_auth {
   echo "✅ Successfully configured gcloud."
 }
 
-function start_vm {
-  echo "Starting GCE VM ..."
+function get_accelerator_zones {
+  local $accelerator=$(echo $1 | awk -F'[=,]' '{print $2}')
+  echo gcloud compute accelerator-types list --verbosity=error --filter="name=${accelerator} AND zone:us-*" --format="value(zone)"
+}
+
+function setup {
   if [[ -z "${service_account_key}" ]] || [[ -z "${project_id}" ]]; then
     echo "Won't authenticate gcloud. If you wish to authenticate gcloud provide both service_account_key and project_id."
   else
@@ -174,6 +178,10 @@ function start_vm {
       https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runners/registration-token |\
       jq -r .token)
   echo "✅ Successfully got the GitHub Runner registration token"
+}
+
+function start_vm {
+  echo "Starting GCE VM ..."
 
   VM_ID="gce-gh-runner-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
   service_account_flag=$([[ -z "${runner_service_account}" ]] || echo "--service-account=${runner_service_account}")
@@ -296,26 +304,42 @@ function start_vm {
   gh_repo="$(truncate_to_label "${GITHUB_REPOSITORY##*/}")"
   gh_run_id="${GITHUB_RUN_ID}"
 
-  gcloud compute instances create ${VM_ID} \
-    --zone=${machine_zone} \
-    ${disk_size_flag} \
-    ${boot_disk_type_flag} \
-    --machine-type=${machine_type} \
-    --scopes=${scopes} \
-    ${service_account_flag} \
-    ${image_project_flag} \
-    ${image_flag} \
-    ${image_family_flag} \
-    ${preemptible_flag} \
-    ${no_external_address_flag} \
-    ${network_flag} \
-    ${subnet_flag} \
-    ${accelerator} \
-    ${maintenance_policy_flag} \
-    --labels=gh_ready=0,gh_repo_owner="${gh_repo_owner}",gh_repo="${gh_repo}",gh_run_id="${gh_run_id}" \
-    --metadata=startup-script="$startup_script" \
-    && echo "label=${VM_ID}" >> $GITHUB_OUTPUT
-
+  function create_vm {
+    gcloud compute instances create ${VM_ID} \
+      --zone=${machine_zone} \
+      ${disk_size_flag} \
+      ${boot_disk_type_flag} \
+      --machine-type=${machine_type} \
+      --scopes=${scopes} \
+      ${service_account_flag} \
+      ${image_project_flag} \
+      ${image_flag} \
+      ${image_family_flag} \
+      ${preemptible_flag} \
+      ${no_external_address_flag} \
+      ${network_flag} \
+      ${subnet_flag} \
+      ${accelerator} \
+      ${maintenance_policy_flag} \
+      --labels=gh_ready=0,gh_repo_owner="${gh_repo_owner}",gh_repo="${gh_repo}",gh_run_id="${gh_run_id}" \
+      --metadata=startup-script="$startup_script"
+  }
+  if [[ -z "${accelerator}" ]]; then
+    create_vm
+  else
+    for zone in $(get_accelerator_zones $accelerator); do
+      echo "⚙️ Attempting creating GCE VM in zone: ${zone}"
+      create_vm
+      [[ $? -eq 0 ]] && break
+    done    
+  fi
+  if [[ $? -eq 1 ]]; then
+    echo "❌ Failed to create GCE VM"
+    exit 1
+  fi
+  echo "✅ Successfully created GCE VM in zone: ${zone}"
+  echo "label=${VM_ID}" >> $GITHUB_OUTPUT
+  
   safety_off
   count=70
   interval=6
