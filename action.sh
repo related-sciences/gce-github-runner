@@ -299,7 +299,7 @@ function start_vm {
   gh_run_id="${GITHUB_RUN_ID}"
 
   function create_vm {
-    echo "attempting to create GCE VM in zone: ${machine_zone}"
+    echo "🔄 Attempting creating GCE VM in zone: ${machine_zone}"
     gcloud compute instances create ${VM_ID} \
       --zone=${machine_zone} \
       ${disk_size_flag} \
@@ -323,10 +323,9 @@ function start_vm {
   if [[ -z "${accelerator}" ]]; then
     create_vm
   else
-    zones=$(gcloud compute accelerator-types list --verbosity=error --filter="name=${accel_only} AND zone:us-*" --format="value(zone)")
+    zones=$(gcloud compute accelerator-types list --verbosity=error --filter="name=${accel_only} AND zone:us-*" --format="value(zone)" | shuf)
     for zone in $zones; do
       machine_zone=$zone
-      echo "⚙️ Attempting creating GCE VM in zone: ${machine_zone}"
       create_vm
       [[ $? -eq 0 ]] && break
     done    
@@ -339,21 +338,21 @@ function start_vm {
   echo "✅ Successfully created GCE VM in zone: ${machine_zone}"
   echo "label=${VM_ID}" >> $GITHUB_OUTPUT
   
-  count=70
-  interval=6
+  count=60
+  interval=10
   seconds=$(( $count * $interval ))
   minutes=$(( $seconds / 60 ))
   while (( i++ < $count )); do
     GH_READY=$(gcloud compute instances describe ${VM_ID} --zone=${machine_zone} --format='json(labels)' | jq -r .labels.gh_ready)
     if [[ $GH_READY == 1 ]]; then
+      elapsed=$(($i * $interval))
+      echo "✅ ${VM_ID} ready after ${elapsed} seconds"
       break
     fi
     echo "${VM_ID} not ready yet, waiting $interval secs ..."
     sleep $interval
   done
-  if [[ $GH_READY == 1 ]]; then
-    echo "✅ ${VM_ID} ready ..."
-  else
+  if [[ $GH_READY != 1 ]]; then
     echo "Waited $minutes minutes for ${VM_ID}, without luck, deleting ${VM_ID} ..."
     gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone}
     exit 1
