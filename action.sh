@@ -160,11 +160,6 @@ function gcloud_auth {
   echo "✅ Successfully configured gcloud."
 }
 
-function get_accelerator_zones {
-  local accel=$(echo $1 | awk -F'[=,]' '{print $2}')
-  echo $(gcloud compute accelerator-types list --verbosity=error --filter="name=${accel} AND zone:us-*" --format="value(zone)")
-}
-
 function start_vm {
   echo "Starting GCE VM ..."
 
@@ -193,6 +188,7 @@ function start_vm {
   no_external_address_flag=$([[ "${no_external_address}" == "true" ]] && echo "--no-address" || echo "")
   network_flag=$([[ ! -z "${network}"  ]] && echo "--network=${network}" || echo "")
   subnet_flag=$([[ ! -z "${subnet}"  ]] && echo "--subnet=${subnet}" || echo "")
+  accel_only=$(echo ${accelerator} | awk -F'[=,]' '{print $2}')
   accelerator=$([[ ! -z "${accelerator}"  ]] && echo "--accelerator=${accelerator} --maintenance-policy=TERMINATE" || echo "")
   maintenance_policy_flag=$([[ -z "${maintenance_policy_terminate}"  ]] || echo "--maintenance-policy=TERMINATE" )
 
@@ -327,7 +323,8 @@ function start_vm {
   if [[ -z "${accelerator}" ]]; then
     create_vm
   else
-    for zone in $(get_accelerator_zones $accelerator); do
+    zones=$(gcloud compute accelerator-types list --verbosity=error --filter="name=${accel_only} AND zone:us-*" --format="value(zone)")
+    for zone in $zones; do
       machine_zone=$zone
       echo "⚙️ Attempting creating GCE VM in zone: ${machine_zone}"
       create_vm
