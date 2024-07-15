@@ -305,6 +305,7 @@ function start_vm {
   gh_run_id="${GITHUB_RUN_ID}"
 
   function create_vm {
+    echo "attempting to create GCE VM in zone: ${machine_zone}"
     gcloud compute instances create ${VM_ID} \
       --zone=${machine_zone} \
       ${disk_size_flag} \
@@ -328,7 +329,8 @@ function start_vm {
     create_vm
   else
     for zone in $(get_accelerator_zones $accelerator); do
-      echo "⚙️ Attempting creating GCE VM in zone: ${zone}"
+      machine_zone=$zone
+      echo "⚙️ Attempting creating GCE VM in zone: ${machine_zone}"
       create_vm
       [[ $? -eq 0 ]] && break
     done    
