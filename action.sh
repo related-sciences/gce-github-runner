@@ -165,7 +165,9 @@ function get_accelerator_zones {
   echo gcloud compute accelerator-types list --verbosity=error --filter="name=${accelerator} AND zone:us-*" --format="value(zone)"
 }
 
-function setup {
+function start_vm {
+  echo "Starting GCE VM ..."
+
   if [[ -z "${service_account_key}" ]] || [[ -z "${project_id}" ]]; then
     echo "Won't authenticate gcloud. If you wish to authenticate gcloud provide both service_account_key and project_id."
   else
@@ -178,11 +180,7 @@ function setup {
       https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runners/registration-token |\
       jq -r .token)
   echo "✅ Successfully got the GitHub Runner registration token"
-}
-
-function start_vm {
-  echo "Starting GCE VM ..."
-
+  
   VM_ID="gce-gh-runner-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
   service_account_flag=$([[ -z "${runner_service_account}" ]] || echo "--service-account=${runner_service_account}")
   image_project_flag=$([[ -z "${image_project}" ]] || echo "--image-project=${image_project}")
