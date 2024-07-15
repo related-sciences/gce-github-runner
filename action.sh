@@ -161,8 +161,8 @@ function gcloud_auth {
 }
 
 function get_accelerator_zones {
-  local accelerator=$(echo $1 | awk -F'[=,]' '{print $2}')
-  echo $(gcloud compute accelerator-types list --verbosity=error --filter="name=${accelerator} AND zone:us-*" --format="value(zone)")
+  local accel=$(echo $1 | awk -F'[=,]' '{print $2}')
+  echo $(gcloud compute accelerator-types list --verbosity=error --filter="name=${accel} AND zone:us-*" --format="value(zone)")
 }
 
 function start_vm {
@@ -323,6 +323,7 @@ function start_vm {
       --labels=gh_ready=0,gh_repo_owner="${gh_repo_owner}",gh_repo="${gh_repo}",gh_run_id="${gh_run_id}" \
       --metadata=startup-script="$startup_script"
   }
+  set -x
   if [[ -z "${accelerator}" ]]; then
     create_vm
   else
@@ -333,6 +334,7 @@ function start_vm {
       [[ $? -eq 0 ]] && break
     done    
   fi
+  set +x
   if [[ $? -eq 1 ]]; then
     echo "❌ Failed to create GCE VM"
     exit 1
