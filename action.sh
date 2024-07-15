@@ -319,7 +319,7 @@ function start_vm {
       --labels=gh_ready=0,gh_repo_owner="${gh_repo_owner}",gh_repo="${gh_repo}",gh_run_id="${gh_run_id}" \
       --metadata=startup-script="$startup_script"
   }
-
+  safety_off
   if [[ -z "${accelerator}" ]]; then
     create_vm
   else
@@ -339,7 +339,6 @@ function start_vm {
   echo "✅ Successfully created GCE VM in zone: ${machine_zone}"
   echo "label=${VM_ID}" >> $GITHUB_OUTPUT
   
-  safety_off
   count=70
   interval=6
   seconds=$(( $count * $interval ))
