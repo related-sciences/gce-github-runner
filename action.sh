@@ -337,7 +337,7 @@ function start_vm {
     echo "❌ Failed to create GCE VM"
     exit 1
   fi
-  echo "✅ Successfully created GCE VM in zone: ${zone}"
+  echo "✅ Successfully created GCE VM in zone: ${machine_zone}"
   echo "label=${VM_ID}" >> $GITHUB_OUTPUT
   
   safety_off
