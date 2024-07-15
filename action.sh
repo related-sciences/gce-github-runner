@@ -161,8 +161,8 @@ function gcloud_auth {
 }
 
 function get_accelerator_zones {
-  local $accelerator=$(echo $1 | awk -F'[=,]' '{print $2}')
-  echo gcloud compute accelerator-types list --verbosity=error --filter="name=${accelerator} AND zone:us-*" --format="value(zone)"
+  local accelerator=$(echo $1 | awk -F'[=,]' '{print $2}')
+  echo $(gcloud compute accelerator-types list --verbosity=error --filter="name=${accelerator} AND zone:us-*" --format="value(zone)")
 }
 
 function start_vm {
@@ -180,7 +180,7 @@ function start_vm {
       https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runners/registration-token |\
       jq -r .token)
   echo "✅ Successfully got the GitHub Runner registration token"
-  
+
   VM_ID="gce-gh-runner-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
   service_account_flag=$([[ -z "${runner_service_account}" ]] || echo "--service-account=${runner_service_account}")
   image_project_flag=$([[ -z "${image_project}" ]] || echo "--image-project=${image_project}")
