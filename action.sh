@@ -258,6 +258,27 @@ function start_vm {
       startup_script="#!/bin/bash
       mkdir /actions-runner
       cd /actions-runner
+      # START HACK As of 2024-07-15 the runner installer hangs on trying to install libicu, so we install it manually
+      if [ -e /etc/debian_version ]; then
+        # prefer apt-get over apt
+        command -v apt-get
+        if [ $? -eq 0 ]
+        then
+            apt_get=apt-get
+        else
+            command -v apt
+            if [ $? -eq 0 ]
+            then
+                apt_get=apt
+            else
+                echo "Found neither 'apt-get' nor 'apt'"
+                print_errormessage
+                exit 1
+            fi
+        fi
+        $apt_get update && $apt_get install -y libicu-dev
+      fi
+      # END HACK
       curl -o actions-runner-linux-arm64-${runner_ver}.tar.gz -L https://github.com/actions/runner/releases/download/v${runner_ver}/actions-runner-linux-arm64-${runner_ver}.tar.gz
       tar xzf ./actions-runner-linux-arm64-${runner_ver}.tar.gz
       ./bin/installdependencies.sh
