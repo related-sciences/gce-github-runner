@@ -195,47 +195,47 @@ function start_vm {
   echo "The new GCE VM will be ${VM_ID}"
 
   startup_script="
-	# Create a systemd service in charge of shutting down the machine once the workflow has finished
-	cat <<-EOF > /etc/systemd/system/shutdown.sh
-	#!/bin/sh
-	sleep ${shutdown_timeout}
-	gcloud compute instances delete $VM_ID --zone=$machine_zone --quiet
-	EOF
+  # Create a systemd service in charge of shutting down the machine once the workflow has finished
+  cat <<-EOF > /etc/systemd/system/shutdown.sh
+  #!/bin/sh
+  sleep ${shutdown_timeout}
+  gcloud compute instances delete $VM_ID --zone=$machine_zone --quiet
+  EOF
 
-	cat <<-EOF > /etc/systemd/system/shutdown.service
-	[Unit]
-	Description=Shutdown service
-	[Service]
-	ExecStart=/etc/systemd/system/shutdown.sh
-	[Install]
-	WantedBy=multi-user.target
-	EOF
+  cat <<-EOF > /etc/systemd/system/shutdown.service
+  [Unit]
+  Description=Shutdown service
+  [Service]
+  ExecStart=/etc/systemd/system/shutdown.sh
+  [Install]
+  WantedBy=multi-user.target
+  EOF
 
-	chmod +x /etc/systemd/system/shutdown.sh
-	systemctl daemon-reload
-	systemctl enable shutdown.service
+  chmod +x /etc/systemd/system/shutdown.sh
+  systemctl daemon-reload
+  systemctl enable shutdown.service
 
-	cat <<-EOF > /usr/bin/gce_runner_shutdown.sh
-	#!/bin/sh
-	echo \"✅ Self deleting $VM_ID in ${machine_zone} in ${shutdown_timeout} seconds ...\"
-	# We tear down the machine by starting the systemd service that was registered by the startup script
-	systemctl start shutdown.service
-	EOF
+  cat <<-EOF > /usr/bin/gce_runner_shutdown.sh
+  #!/bin/sh
+  echo \"✅ Self deleting $VM_ID in ${machine_zone} in ${shutdown_timeout} seconds ...\"
+  # We tear down the machine by starting the systemd service that was registered by the startup script
+  systemctl start shutdown.service
+  EOF
 
   # Install driver if this is a deeplearning image is specified
   if [ \"${image_project}\" == \"deeplearning-platform-release\" ]; then
     sudo /opt/deeplearning/install-driver.sh
   fi
 
-	# See: https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/running-scripts-before-or-after-a-job
-	echo "ACTIONS_RUNNER_HOOK_JOB_COMPLETED=/usr/bin/gce_runner_shutdown.sh" >.env
-	gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=0 && \\
-	RUNNER_ALLOW_RUNASROOT=1 ./config.sh --url https://github.com/${GITHUB_REPOSITORY} --token ${RUNNER_TOKEN} --labels ${VM_ID} --unattended ${ephemeral_flag} --disableupdate && \\
-	./svc.sh install && \\
-	./svc.sh start && \\
-	gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=1
-	# 3 days represents the max workflow runtime. This will shutdown the instance if everything else fails.
-	nohup sh -c \"sleep 3d && gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone}\" > /dev/null &
+  # See: https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/running-scripts-before-or-after-a-job
+  echo "ACTIONS_RUNNER_HOOK_JOB_COMPLETED=/usr/bin/gce_runner_shutdown.sh" >.env
+  gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=0 && \\
+  RUNNER_ALLOW_RUNASROOT=1 ./config.sh --url https://github.com/${GITHUB_REPOSITORY} --token ${RUNNER_TOKEN} --labels ${VM_ID} --unattended ${ephemeral_flag} --disableupdate && \\
+  ./svc.sh install && \\
+  ./svc.sh start && \\
+  gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=1
+  # 3 days represents the max workflow runtime. This will shutdown the instance if everything else fails.
+  nohup sh -c \"sleep 3d && gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone}\" > /dev/null &
   "
 
   if $actions_preinstalled ; then
@@ -319,7 +319,7 @@ function start_vm {
       --labels=gh_ready=0,gh_repo_owner="${gh_repo_owner}",gh_repo="${gh_repo}",gh_run_id="${gh_run_id}" \
       --metadata=startup-script="$startup_script"
   }
-  set -x
+
   if [[ -z "${accelerator}" ]]; then
     create_vm
   else
@@ -331,7 +331,7 @@ function start_vm {
       [[ $? -eq 0 ]] && break
     done    
   fi
-  set +x
+
   if [[ $? -eq 1 ]]; then
     echo "❌ Failed to create GCE VM"
     exit 1
