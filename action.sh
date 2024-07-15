@@ -196,31 +196,31 @@ function start_vm {
 
   startup_script="
   # Create a systemd service in charge of shutting down the machine once the workflow has finished
-  cat <<-EOF > /etc/systemd/system/shutdown.sh
+  cat <<-EOS > /etc/systemd/system/shutdown.sh
   #!/bin/sh
   sleep ${shutdown_timeout}
   gcloud compute instances delete $VM_ID --zone=$machine_zone --quiet
-  EOF
+  EOS
 
-  cat <<-EOF > /etc/systemd/system/shutdown.service
+  cat <<-EOSD > /etc/systemd/system/shutdown.service
   [Unit]
   Description=Shutdown service
   [Service]
   ExecStart=/etc/systemd/system/shutdown.sh
   [Install]
   WantedBy=multi-user.target
-  EOF
+  EOSD
 
   chmod +x /etc/systemd/system/shutdown.sh
   systemctl daemon-reload
   systemctl enable shutdown.service
 
-  cat <<-EOF > /usr/bin/gce_runner_shutdown.sh
+  cat <<-EOSDR > /usr/bin/gce_runner_shutdown.sh
   #!/bin/sh
   echo \"✅ Self deleting $VM_ID in ${machine_zone} in ${shutdown_timeout} seconds ...\"
   # We tear down the machine by starting the systemd service that was registered by the startup script
   systemctl start shutdown.service
-  EOF
+  EOSDR
 
   # Install driver if this is a deeplearning image is specified
   if [ \"${image_project}\" == \"deeplearning-platform-release\" ]; then
@@ -260,7 +260,7 @@ function start_vm {
       cd /actions-runner
       curl -o actions-runner-linux-arm64-${runner_ver}.tar.gz -L https://github.com/actions/runner/releases/download/v${runner_ver}/actions-runner-linux-arm64-${runner_ver}.tar.gz
       tar xzf ./actions-runner-linux-arm64-${runner_ver}.tar.gz
-      ./bin/installdependencies.sh && \\
+      ./bin/installdependencies.sh
       $startup_script"
     else
       startup_script="#!/bin/bash
@@ -268,7 +268,7 @@ function start_vm {
       cd /actions-runner
       curl -o actions-runner-linux-x64-${runner_ver}.tar.gz -L https://github.com/actions/runner/releases/download/v${runner_ver}/actions-runner-linux-x64-${runner_ver}.tar.gz
       tar xzf ./actions-runner-linux-x64-${runner_ver}.tar.gz
-      ./bin/installdependencies.sh && \\
+      ./bin/installdependencies.sh
       $startup_script"
     fi
   fi
