@@ -262,13 +262,11 @@ function start_vm {
       if [ -e /etc/debian_version ]; then
         # prefer apt-get over apt
         command -v apt-get
-        if [ $? -eq 0 ]
-        then
+        if [ $? -eq 0 ]; then
             apt_get=apt-get
         else
             command -v apt
-            if [ $? -eq 0 ]
-            then
+            if [ $? -eq 0 ]; then
                 apt_get=apt
             else
                 echo "Found neither 'apt-get' nor 'apt'"
