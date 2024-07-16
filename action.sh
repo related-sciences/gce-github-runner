@@ -265,15 +265,10 @@ function start_vm {
     else
       startup_script="#!/bin/bash
       mkdir /actions-runner
-      cd /actions-runner
-      # START HACK As of 2024-07-15 the runner installer hangs on trying to install libicu, so we install it manually
-      if [ -e /etc/debian_version ]; then
-        apt-get update && apt-get install -y libicu-dev
-      fi
-      # END HACK
+      apt-get update && apt-get install -y libicu-dev
       curl -o actions-runner-linux-x64-${runner_ver}.tar.gz -L https://github.com/actions/runner/releases/download/v${runner_ver}/actions-runner-linux-x64-${runner_ver}.tar.gz
       tar xzf ./actions-runner-linux-x64-${runner_ver}.tar.gz
-      ./bin/installdependencies.sh
+      ./bin/installdependencies.sh && \\
       $startup_script"
     fi
   fi
