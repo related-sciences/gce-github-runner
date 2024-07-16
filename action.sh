@@ -269,7 +269,8 @@ function start_vm {
       curl -o actions-runner-linux-x64-${runner_ver}.tar.gz -L https://github.com/actions/runner/releases/download/v${runner_ver}/actions-runner-linux-x64-${runner_ver}.tar.gz
       tar xzf ./actions-runner-linux-x64-${runner_ver}.tar.gz
       echo \"installing dependencies\"
-      ./bin/installdependencies.sh
+      export DEBIAN_FRONTEND=noninteractive 
+      apt-get update && apt-get install -y libkrb5-3 zlib1g libttng-ust0 libicu66
       echo \"dependencies installed\"
       $startup_script"
     fi
