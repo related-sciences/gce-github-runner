@@ -187,11 +187,11 @@ function start_vm {
   no_external_address_flag=$([[ "${no_external_address}" == "true" ]] && echo "--no-address" || echo "")
   network_flag=$([[ ! -z "${network}"  ]] && echo "--network=${network}" || echo "")
   subnet_flag=$([[ ! -z "${subnet}"  ]] && echo "--subnet=${subnet}" || echo "")
-  accelerator=$([[ ! -z "${accelerator}"  ]] && echo "--accelerator=${accelerator} --maintenance-policy=TERMINATE" || echo "")
   accel_only=$(echo ${accelerator} | awk -F'[=,]' '{print $2}')
+  accelerator=$([[ ! -z "${accelerator}"  ]] && echo "--accelerator=${accelerator} --maintenance-policy=TERMINATE" || echo "")
   maintenance_policy_flag=$([[ -z "${maintenance_policy_terminate}"  ]] || echo "--maintenance-policy=TERMINATE" )
 
-  echo "ℹ️ The new GCE VM will be ${VM_ID}"
+  echo "The new GCE VM will be ${VM_ID}"
 
   startup_script="
 	# Create a systemd service in charge of shutting down the machine once the workflow has finished
@@ -319,6 +319,7 @@ function start_vm {
       --labels=gh_ready=0,gh_repo_owner="${gh_repo_owner}",gh_repo="${gh_repo}",gh_run_id="${gh_run_id}" \
       --metadata=startup-script="$startup_script"
   }
+
   if [[ -z "${accelerator}" ]]; then
     create_vm
   else
