@@ -188,6 +188,7 @@ function start_vm {
   network_flag=$([[ ! -z "${network}"  ]] && echo "--network=${network}" || echo "")
   subnet_flag=$([[ ! -z "${subnet}"  ]] && echo "--subnet=${subnet}" || echo "")
   accelerator=$([[ ! -z "${accelerator}"  ]] && echo "--accelerator=${accelerator} --maintenance-policy=TERMINATE" || echo "")
+  accel_only=$(echo ${accelerator} | awk -F'[=,]' '{print $2}')
   maintenance_policy_flag=$([[ -z "${maintenance_policy_terminate}"  ]] || echo "--maintenance-policy=TERMINATE" )
 
   echo "ℹ️ The new GCE VM will be ${VM_ID}"
@@ -326,7 +327,7 @@ function start_vm {
       machine_zone=$zone
       create_vm
       [[ $? -eq 0 ]] && break
-    done    
+    done
   fi
   echo "label=${VM_ID}" >> $GITHUB_OUTPUT
 
