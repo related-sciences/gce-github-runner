@@ -222,11 +222,6 @@ function start_vm {
   systemctl start shutdown.service
   EOSDR
 
-  # Install driver if this is a deeplearning image is specified
-  if [ \"${image_project}\" == \"deeplearning-platform-release\" ]; then
-    sudo /opt/deeplearning/install-driver.sh
-  fi
-
   # See: https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/running-scripts-before-or-after-a-job
   echo "ACTIONS_RUNNER_HOOK_JOB_COMPLETED=/usr/bin/gce_runner_shutdown.sh" >.env
   gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=0 && \\
@@ -263,15 +258,13 @@ function start_vm {
       ./bin/installdependencies.sh && \\
       $startup_script"
     else
-      startup_script="#!/bin/bash
+      startup_script="#! /bin/bash
       mkdir /actions-runner
       cd /actions-runner
-      curl -o actions-runner-linux-x64-${runner_ver}.tar.gz -L https://github.com/actions/runner/releases/download/v${runner_ver}/actions-runner-linux-x64-${runner_ver}.tar.gz
+      curl -o actions-runner-linux-x64-${runner_ver}.tar.gz -sS -L https://github.com/actions/runner/releases/download/v${runner_ver}/actions-runner-linux-x64-${runner_ver}.tar.gz
       tar xzf ./actions-runner-linux-x64-${runner_ver}.tar.gz
-      echo \"installing dependencies\"
       export DEBIAN_FRONTEND=noninteractive 
-      apt-get update && apt-get install -y libkrb5-3 zlib1g libttng-ust0 libicu66
-      echo \"dependencies installed\"
+      ./bin/installdependencies.sh && \\
       $startup_script"
     fi
   fi
@@ -341,7 +334,7 @@ function start_vm {
   echo "✅ Successfully created GCE VM in zone: ${machine_zone}"
   echo "label=${VM_ID}" >> $GITHUB_OUTPUT
   
-  count=60
+  count=120
   interval=10
   seconds=$(( $count * $interval ))
   minutes=$(( $seconds / 60 ))
