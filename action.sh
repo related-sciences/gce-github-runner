@@ -187,6 +187,7 @@ function start_vm {
   no_external_address_flag=$([[ "${no_external_address}" == "true" ]] && echo "--no-address" || echo "")
   network_flag=$([[ ! -z "${network}"  ]] && echo "--network=${network}" || echo "")
   subnet_flag=$([[ ! -z "${subnet}"  ]] && echo "--subnet=${subnet}" || echo "")
+  accel_only=$(echo ${accelerator} | awk -F'[=,]' '{print $2}')
   accelerator=$([[ ! -z "${accelerator}"  ]] && echo "--accelerator=${accelerator} --maintenance-policy=TERMINATE" || echo "")
   maintenance_policy_flag=$([[ -z "${maintenance_policy_terminate}"  ]] || echo "--maintenance-policy=TERMINATE" )
 
@@ -220,10 +221,10 @@ function start_vm {
 	systemctl start shutdown.service
 	EOF
 
-  # Install driver if this is a deeplearning image is specified
-  if [ \"${image_project}\" == \"deeplearning-platform-release\" ]; then
-    sudo /opt/deeplearning/install-driver.sh
-  fi
+	# Install driver if this is a deeplearning image is specified
+	if [ \"${image_project}\" == \"deeplearning-platform-release\" ]; then
+		sudo /opt/deeplearning/install-driver.sh
+	fi
 
 	# See: https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/running-scripts-before-or-after-a-job
 	echo "ACTIONS_RUNNER_HOOK_JOB_COMPLETED=/usr/bin/gce_runner_shutdown.sh" >.env
@@ -296,31 +297,46 @@ function start_vm {
   gh_repo="$(truncate_to_label "${GITHUB_REPOSITORY##*/}")"
   gh_run_id="${GITHUB_RUN_ID}"
 
-  gcloud compute instances create ${VM_ID} \
-    --zone=${machine_zone} \
-    ${disk_size_flag} \
-    ${boot_disk_type_flag} \
-    --machine-type=${machine_type} \
-    --scopes=${scopes} \
-    ${service_account_flag} \
-    ${image_project_flag} \
-    ${image_flag} \
-    ${image_family_flag} \
-    ${preemptible_flag} \
-    ${no_external_address_flag} \
-    ${network_flag} \
-    ${subnet_flag} \
-    ${accelerator} \
-    ${maintenance_policy_flag} \
-    --labels=gh_ready=0,gh_repo_owner="${gh_repo_owner}",gh_repo="${gh_repo}",gh_run_id="${gh_run_id}" \
-    --metadata=startup-script="$startup_script" \
-    && echo "label=${VM_ID}" >> $GITHUB_OUTPUT
+  function create_vm {
+    echo "🔄 Attempting to create VM in zone: ${machine_zone}"
+    safety_off
+    gcloud compute instances create ${VM_ID} \
+      --zone=${machine_zone} \
+      ${disk_size_flag} \
+      ${boot_disk_type_flag} \
+      --machine-type=${machine_type} \
+      --scopes=${scopes} \
+      ${service_account_flag} \
+      ${image_project_flag} \
+      ${image_flag} \
+      ${image_family_flag} \
+      ${preemptible_flag} \
+      ${no_external_address_flag} \
+      ${network_flag} \
+      ${subnet_flag} \
+      ${accelerator} \
+      ${maintenance_policy_flag} \
+      --labels=gh_ready=0,gh_repo_owner="${gh_repo_owner}",gh_repo="${gh_repo}",gh_run_id="${gh_run_id}" \
+      --metadata=startup-script="$startup_script"
+  }
 
-  safety_off
-  count=70
-  interval=6
+  if [[ -z "${accelerator}" ]]; then
+    create_vm
+  else
+    zones=$(gcloud compute accelerator-types list --verbosity=error --filter="name=${accel_only} AND zone:us-*" --format="value(zone)" | shuf)
+    for zone in $zones; do
+      machine_zone=$zone
+      create_vm
+      [[ $? -eq 0 ]] && break
+    done
+  fi
+  echo "label=${VM_ID}" >> $GITHUB_OUTPUT
+
+  count=60
+  interval=10
   seconds=$(( $count * $interval ))
   minutes=$(( $seconds / 60 ))
+  i=0
   while (( i++ < $count )); do
     GH_READY=$(gcloud compute instances describe ${VM_ID} --zone=${machine_zone} --format='json(labels)' | jq -r .labels.gh_ready)
     if [[ $GH_READY == 1 ]]; then
