@@ -193,82 +193,13 @@ function start_vm {
 
   echo "The new GCE VM will be ${VM_ID}"
 
-  startup_script="
-	# Create a systemd service in charge of shutting down the machine once the workflow has finished
-	cat <<-EOF > /etc/systemd/system/shutdown.sh
-	#!/bin/sh
-	sleep ${shutdown_timeout}
-	gcloud compute instances delete $VM_ID --zone=$machine_zone --quiet
-	EOF
-
-	cat <<-EOF > /etc/systemd/system/shutdown.service
-	[Unit]
-	Description=Shutdown service
-	[Service]
-	ExecStart=/etc/systemd/system/shutdown.sh
-	[Install]
-	WantedBy=multi-user.target
-	EOF
-
-	chmod +x /etc/systemd/system/shutdown.sh
-	systemctl daemon-reload
-	systemctl enable shutdown.service
-
-	cat <<-EOF > /usr/bin/gce_runner_shutdown.sh
-	#!/bin/sh
-	echo \"✅ Self deleting $VM_ID in ${machine_zone} in ${shutdown_timeout} seconds ...\"
-	# We tear down the machine by starting the systemd service that was registered by the startup script
-	systemctl start shutdown.service
-	EOF
-
-	# Install driver if this is a deeplearning image is specified
-	if [ \"${image_project}\" == \"deeplearning-platform-release\" ]; then
-		sudo /opt/deeplearning/install-driver.sh
-	fi
-
-	# See: https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/running-scripts-before-or-after-a-job
-	echo "ACTIONS_RUNNER_HOOK_JOB_COMPLETED=/usr/bin/gce_runner_shutdown.sh" >.env
-	gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=0 && \\
-	RUNNER_ALLOW_RUNASROOT=1 ./config.sh --url https://github.com/${GITHUB_REPOSITORY} --token ${RUNNER_TOKEN} --labels ${VM_ID} --unattended ${ephemeral_flag} --disableupdate && \\
-	./svc.sh install && \\
-	./svc.sh start && \\
-	gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=1
-	# 3 days represents the max workflow runtime. This will shutdown the instance if everything else fails.
-	nohup sh -c \"sleep 3d && gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone}\" > /dev/null &
-  "
-
-  if $actions_preinstalled ; then
-    echo "✅ Startup script won't install GitHub Actions (pre-installed)"
-    startup_script="#!/bin/bash
-    cd /actions-runner
-    $startup_script"
-  else
-    if [[ "$runner_ver" = "latest" ]]; then
-      latest_ver=$(curl -sL https://api.github.com/repos/actions/runner/releases/latest | jq -r '.tag_name' | sed -e 's/^v//')
-      runner_ver="$latest_ver"
-      echo "✅ runner_ver=latest is specified. v$latest_ver is detected as the latest version."
-      if [[ -z "$latest_ver" || "null" == "$latest_ver" ]]; then
-        echo "❌ could not retrieve the latest version of a runner"
-        exit 2
-      fi
-    fi
-    echo "✅ Startup script will install GitHub Actions v$runner_ver"
-    if $arm ; then
-      startup_script="#!/bin/bash
-      mkdir /actions-runner
-      cd /actions-runner
-      curl -o actions-runner-linux-arm64-${runner_ver}.tar.gz -L https://github.com/actions/runner/releases/download/v${runner_ver}/actions-runner-linux-arm64-${runner_ver}.tar.gz
-      tar xzf ./actions-runner-linux-arm64-${runner_ver}.tar.gz
-      ./bin/installdependencies.sh && \\
-      $startup_script"
-    else
-      startup_script="#!/bin/bash
-      mkdir /actions-runner
-      cd /actions-runner
-      curl -o actions-runner-linux-x64-${runner_ver}.tar.gz -L https://github.com/actions/runner/releases/download/v${runner_ver}/actions-runner-linux-x64-${runner_ver}.tar.gz
-      tar xzf ./actions-runner-linux-x64-${runner_ver}.tar.gz
-      ./bin/installdependencies.sh && \\
-      $startup_script"
+  if [[ "$runner_ver" = "latest" ]]; then
+    latest_ver=$(curl -sL https://api.github.com/repos/actions/runner/releases/latest | jq -r '.tag_name' | sed -e 's/^v//')
+    runner_ver="$latest_ver"
+    echo "✅ runner_ver=latest is specified. v$latest_ver is detected as the latest version."
+    if [[ -z "$latest_ver" || "null" == "$latest_ver" ]]; then
+      echo "❌ could not retrieve the latest version of a runner"
+      exit 2
     fi
   fi
   
@@ -326,6 +257,55 @@ function start_vm {
     zones=$(gcloud compute accelerator-types list --verbosity=error --filter="name=${accel_only} AND zone:us-*" --format="value(zone)" | shuf)
     for zone in $zones; do
       machine_zone=$zone
+      startup_script="
+	#!/bin/bash
+	mkdir /actions-runner
+	cd /actions-runner
+	curl -o actions-runner-linux-x64-${runner_ver}.tar.gz -L https://github.com/actions/runner/releases/download/v${runner_ver}actions-runner-linux-x64-${runner_ver}.tar.gz
+	tar xzf ./actions-runner-linux-x64-${runner_ver}.tar.gz
+	./bin/installdependencies.sh && \\
+	# Create a systemd service in charge of shutting down the machine once the workflow has finished
+	cat <<-EOF > /etc/systemd/system/shutdown.sh
+	#!/bin/sh
+	sleep ${shutdown_timeout}
+	gcloud compute instances delete $VM_ID --zone=$machine_zone --quiet
+	EOF
+
+	cat <<-EOF > /etc/systemd/system/shutdown.service
+	[Unit]
+	Description=Shutdown service
+	[Service]
+	ExecStart=/etc/systemd/system/shutdown.sh
+	[Install]
+	WantedBy=multi-user.target
+	EOF
+
+	chmod +x /etc/systemd/system/shutdown.sh
+	systemctl daemon-reload
+	systemctl enable shutdown.service
+
+	cat <<-EOF > /usr/bin/gce_runner_shutdown.sh
+	#!/bin/sh
+	echo \"✅ Self deleting $VM_ID in ${machine_zone} in ${shutdown_timeout} seconds ...\"
+	# We tear down the machine by starting the systemd service that was registered by the startup script
+	systemctl start shutdown.service
+	EOF
+
+	# Install driver if this is a deeplearning image is specified
+	if [ \"${image_project}\" == \"deeplearning-platform-release\" ]; then
+		sudo /opt/deeplearning/install-driver.sh
+	fi
+
+	# See: https://docs.github.com/en/actions/hosting-your-own-runners/managing-self-hosted-runners/running-scripts-before-or-after-a-job
+	echo "ACTIONS_RUNNER_HOOK_JOB_COMPLETED=/usr/bin/gce_runner_shutdown.sh" >.env
+	gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=0 && \\
+	RUNNER_ALLOW_RUNASROOT=1 ./config.sh --url https://github.com/${GITHUB_REPOSITORY} --token ${RUNNER_TOKEN} --labels ${VM_ID} --unattended ${ephemeral_flag} --disableupdate && \\
+	./svc.sh install && \\
+	./svc.sh start && \\
+	gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=1
+	# 3 days represents the max workflow runtime. This will shutdown the instance if everything else fails.
+	nohup sh -c \"sleep 3d && gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone}\" > /dev/null &
+  "
       create_vm
       [[ $? -eq 0 ]] && break
     done
