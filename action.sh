@@ -265,7 +265,7 @@ function start_vm {
       $startup_script"
     fi
   fi
-  
+
   # GCE VM label values requirements:
   # - can contain only lowercase letters, numeric characters, underscores, and dashes
   # - have a maximum length of 63 characters
@@ -277,7 +277,7 @@ function start_vm {
   #   - All characters must be either a hyphen (-) or alphanumeric
   # - repository name
   #   - Max length: 100 code points
-  #   - All code points must be either a hyphen (-), an underscore (_), a period (.), 
+  #   - All code points must be either a hyphen (-), an underscore (_), a period (.),
   #     or an ASCII alphanumeric code point
   # ref: https://github.com/dead-claudia/github-limits
   function truncate_to_label {
