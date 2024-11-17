@@ -40,6 +40,7 @@ actions_preinstalled=
 maintenance_policy_terminate=
 arm=
 accelerator=
+min_cpu_platform_flag=
 
 OPTLIND=1
 while getopts_long :h opt \
@@ -67,6 +68,7 @@ while getopts_long :h opt \
   arm required_argument \
   maintenance_policy_terminate optional_argument \
   accelerator optional_argument \
+  min_cpu_platform optional_argument \
   help no_argument "" "$@"
 do
   case "$opt" in
@@ -141,7 +143,10 @@ do
       ;;
     accelerator)
       accelerator=$OPTLARG
-      ;;      
+      ;;
+    min_cpu_platform)
+      min_cpu_platform_flag=--min-cpu-platform="$OPTLARG"
+      ;;
     h|help)
       usage
       exit 0
@@ -307,6 +312,7 @@ function start_vm {
     ${subnet_flag} \
     ${accelerator} \
     ${maintenance_policy_flag} \
+    "${min_cpu_platform_flag}" \
     --labels=gh_ready=0,gh_repo_owner="${gh_repo_owner}",gh_repo="${gh_repo}",gh_run_id="${gh_run_id}" \
     --metadata=startup-script="$startup_script" \
     && echo "label=${VM_ID}" >> $GITHUB_OUTPUT

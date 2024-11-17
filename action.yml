@@ -99,6 +99,9 @@ inputs:
   boot_disk_type:
     description: "Boot disk type for the GCE instance (https://cloud.google.com/sdk/gcloud/reference/compute/disk-types/list)"
     required: false
+  min_cpu_platform:
+    description: "When specified, the VM will be scheduled on host with specified CPU architecture or a newer one."
+    required: false
 outputs:
   label:
     description: >-
@@ -135,4 +138,5 @@ runs:
         --actions_preinstalled=${{ inputs.actions_preinstalled }}
         --maintenance_policy_terminate=${{ inputs.maintenance_policy_terminate }}
         --arm=${{ inputs.arm }}
+        --min_cpu_platform="${{ inputs.min_cpu_platform }}"
       shell: bash
