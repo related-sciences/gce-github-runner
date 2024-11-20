@@ -101,7 +101,8 @@ inputs:
     required: false
   min_cpu_platform:
     description: "When specified, the VM will be scheduled on host with specified CPU architecture or a newer one."
-    required: false
+    default: AUTOMATIC
+    required: true
 outputs:
   label:
     description: >-
@@ -138,5 +139,5 @@ runs:
         --actions_preinstalled=${{ inputs.actions_preinstalled }}
         --maintenance_policy_terminate=${{ inputs.maintenance_policy_terminate }}
         --arm=${{ inputs.arm }}
-        --min_cpu_platform="${{ inputs.min_cpu_platform }}"
+        --min_cpu_platform='${{ inputs.min_cpu_platform }}'
       shell: bash
