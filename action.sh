@@ -293,7 +293,12 @@ function start_vm {
     ${maintenance_policy_flag} \
     --labels=gh_ready=0,vm_id=${VM_ID} \
     --metadata=startup-script="$startup_script"
- 
+
+  if [ $? -ne 0 ]; then
+    echo "Error: Failed to create VM(s)"
+    exit 1
+  fi
+
   echo "label=${VM_ID}" >> $GITHUB_OUTPUT
 
   safety_off
