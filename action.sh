@@ -21,6 +21,7 @@ token=
 project_id=
 service_account_key=
 runner_ver=
+vm_name_prefix=
 machine_zone=
 machine_type=
 boot_disk_type=
@@ -49,6 +50,7 @@ while getopts_long :h opt \
   project_id required_argument \
   service_account_key required_argument \
   runner_ver required_argument \
+  vm_name_prefix required_argument \
   machine_zone required_argument \
   machine_type required_argument \
   boot_disk_type optional_argument \
@@ -86,6 +88,9 @@ do
       ;;
     runner_ver)
       runner_ver=$OPTLARG
+      ;;
+    vm_name_prefix)
+      vm_name_prefix=$OPTLARG
       ;;
     machine_zone)
       machine_zone=$OPTLARG
@@ -180,7 +185,7 @@ function start_vm {
       jq -r .token)
   echo "✅ Successfully got the GitHub Runner registration token"
 
-  VM_ID="gce-gh-runner-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+  VM_ID="${vm_name_prefix}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
   service_account_flag=$([[ -z "${runner_service_account}" ]] || echo "--service-account=${runner_service_account}")
   image_project_flag=$([[ -z "${image_project}" ]] || echo "--image-project=${image_project}")
   image_flag=$([[ -z "${image}" ]] || echo "--image=${image}")
