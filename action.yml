@@ -24,6 +24,10 @@ inputs:
     description: Version of the GitHub Runner. "latest" will resolve the latest version.
     default: "latest"
     required: true
+  vm_name_prefix:
+    description: Prefix of the name of created VM, final name is ${prefix}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}
+    default: "gce-gh-runner"
+    required: true
   machine_zone:
     description: GCE zone
     default: "us-east1-c"
@@ -120,6 +124,7 @@ runs:
         --project_id=${{ inputs.project_id }}
         --service_account_key='${{ inputs.service_account_key }}'
         --runner_ver=${{ inputs.runner_ver }}
+        --vm_name_prefix=${{ inputs.vm_name_prefix }}
         --machine_zone=${{ inputs.machine_zone }}
         --machine_type=${{ inputs.machine_type }}
         --network=${{ inputs.network }}
