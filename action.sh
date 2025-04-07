@@ -202,12 +202,22 @@ function start_vm {
 
   echo "The new GCE VM will be ${VM_ID}"
 
+  shutdown_command="gcloud compute instances delete $VM_ID --zone=$machine_zone --quiet"
+  startup_prelude="#!/bin/bash
+  set -e
+  shutdown() {
+    echo ❌ Machine setup failed so deleting $VM_ID in ${machine_zone} ...
+    ${shutdown_command}
+  }
+  trap shutdown EXIT
+  "
+
   startup_script="
 	# Create a systemd service in charge of shutting down the machine once the workflow has finished
 	cat <<-EOF > /etc/systemd/system/shutdown.sh
 	#!/bin/sh
 	sleep ${shutdown_timeout}
-	gcloud compute instances delete $VM_ID --zone=$machine_zone --quiet
+	${shutdown_command}
 	EOF
 
 	cat <<-EOF > /etc/systemd/system/shutdown.service
@@ -238,12 +248,12 @@ function start_vm {
 	./svc.sh start && \\
 	gcloud compute instances add-labels ${VM_ID} --zone=${machine_zone} --labels=gh_ready=1
 	# 3 days represents the max workflow runtime. This will shutdown the instance if everything else fails.
-	nohup sh -c \"sleep 3d && gcloud --quiet compute instances delete ${VM_ID} --zone=${machine_zone}\" > /dev/null &
+	nohup sh -c \"sleep 3d && ${shutdown_command}\" > /dev/null &
   "
 
   if $actions_preinstalled ; then
     echo "✅ Startup script won't install GitHub Actions (pre-installed)"
-    startup_script="#!/bin/bash
+    startup_script="${startup_prelude}
     cd /actions-runner
     $startup_script"
   else
@@ -258,20 +268,20 @@ function start_vm {
     fi
     echo "✅ Startup script will install GitHub Actions v$runner_ver"
     if $arm ; then
-      startup_script="#!/bin/bash
+      startup_script="${startup_prelude}
       mkdir /actions-runner
       cd /actions-runner
       curl -o actions-runner-linux-arm64-${runner_ver}.tar.gz -L https://github.com/actions/runner/releases/download/v${runner_ver}/actions-runner-linux-arm64-${runner_ver}.tar.gz
       tar xzf ./actions-runner-linux-arm64-${runner_ver}.tar.gz
-      ./bin/installdependencies.sh && \\
+      ./bin/installdependencies.sh
       $startup_script"
     else
-      startup_script="#!/bin/bash
+      startup_script="${startup_prelude}
       mkdir /actions-runner
       cd /actions-runner
       curl -o actions-runner-linux-x64-${runner_ver}.tar.gz -L https://github.com/actions/runner/releases/download/v${runner_ver}/actions-runner-linux-x64-${runner_ver}.tar.gz
       tar xzf ./actions-runner-linux-x64-${runner_ver}.tar.gz
-      ./bin/installdependencies.sh && \\
+      ./bin/installdependencies.sh
       $startup_script"
     fi
   fi
