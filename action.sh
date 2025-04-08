@@ -209,7 +209,7 @@ function start_vm {
     echo ❌ Machine setup failed so deleting $VM_ID in ${machine_zone} ...
     ${shutdown_command}
   }
-  trap shutdown EXIT
+  trap shutdown ERR
   "
 
   startup_script="
