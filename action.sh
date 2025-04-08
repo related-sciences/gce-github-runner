@@ -207,6 +207,7 @@ function start_vm {
   set -e
   shutdown() {
     echo ❌ Machine setup failed so deleting $VM_ID in ${machine_zone} ...
+    sleep ${shutdown_timeout}
     ${shutdown_command}
   }
   trap shutdown ERR
