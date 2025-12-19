@@ -131,6 +131,7 @@ runs:
         --service_account_key='${{ inputs.service_account_key }}'
         --runner_ver=${{ inputs.runner_ver }}
         --vm_name_prefix=${{ inputs.vm_name_prefix }}
+        --source_instance_template=${{ inputs.source_instance_template}}
         --machine_zone=${{ inputs.machine_zone }}
         --machine_type=${{ inputs.machine_type }}
         --network=${{ inputs.network }}
