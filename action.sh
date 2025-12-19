@@ -186,7 +186,7 @@ function start_vm {
 
   RUNNER_TOKEN=$(curl -S -s -XPOST \
       -H "authorization: Bearer ${token}" \
-      https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/runners/registration-token |\
+      https://api.github.com/repos/${gh_repo_owner}/${gh_repo}/actions/runners/registration-token |\
       jq -r .token)
   echo "✅ Successfully got the GitHub Runner registration token"
 
