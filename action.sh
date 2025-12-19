@@ -191,6 +191,7 @@ function start_vm {
   echo "✅ Successfully got the GitHub Runner registration token"
 
   VM_ID="${vm_name_prefix}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+  source_instance_template_flag=$([[ -z "${source_instance_template}" ]] || echo "--source_instance_template=${source_instance_template}")
   service_account_flag=$([[ -z "${runner_service_account}" ]] || echo "--service-account=${runner_service_account}")
   image_project_flag=$([[ -z "${image_project}" ]] || echo "--image-project=${image_project}")
   image_flag=$([[ -z "${image}" ]] || echo "--image=${image}")
@@ -300,7 +301,7 @@ function start_vm {
   # Github's requirements:
   # - username/organization name
   #   - Max length: 39 characters
-  #   - All characters must be either a hyphen (-) or alphanumeric
+  #   - All characters be either a hyphen (-) or alphanumeric
   # - repository name
   #   - Max length: 100 code points
   #   - All code points must be either a hyphen (-), an underscore (_), a period (.),
