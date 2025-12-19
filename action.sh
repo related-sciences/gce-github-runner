@@ -22,6 +22,7 @@ project_id=
 service_account_key=
 runner_ver=
 vm_name_prefix=
+source_instance_template=
 machine_zone=
 machine_type=
 boot_disk_type=
@@ -51,6 +52,7 @@ while getopts_long :h opt \
   service_account_key required_argument \
   runner_ver required_argument \
   vm_name_prefix required_argument \
+  source_instance_template: optional_argument \
   machine_zone required_argument \
   machine_type required_argument \
   boot_disk_type optional_argument \
@@ -91,6 +93,9 @@ do
       ;;
     vm_name_prefix)
       vm_name_prefix=$OPTLARG
+      ;;
+    source_instance_template)
+      source_instance_template=${OPTLARG-$source_instance_template}
       ;;
     machine_zone)
       machine_zone=$OPTLARG
@@ -313,6 +318,7 @@ function start_vm {
   gh_run_id="${GITHUB_RUN_ID}"
 
   gcloud compute instances create ${VM_ID} \
+    --source-instance-template=${source_instance_template} \
     --zone=${machine_zone} \
     ${disk_size_flag} \
     ${boot_disk_type_flag} \

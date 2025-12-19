@@ -28,6 +28,12 @@ inputs:
     description: Prefix of the name of created VM, final name is ${prefix}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}
     default: "gce-gh-runner"
     required: true
+  source_instance_template:
+    description: >
+      The name of the source instance template to create the VM from.
+      If provided, the VM will be created based on this instance template.
+      It has to exist in the same zone as specified in machine_zone input.
+    required: false  
   machine_zone:
     description: GCE zone
     default: "us-east1-c"
