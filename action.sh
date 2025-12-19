@@ -52,7 +52,7 @@ while getopts_long :h opt \
   service_account_key required_argument \
   runner_ver required_argument \
   vm_name_prefix required_argument \
-  source_instance_template: optional_argument \
+  source_instance_template optional_argument \
   machine_zone required_argument \
   machine_type required_argument \
   boot_disk_type optional_argument \
