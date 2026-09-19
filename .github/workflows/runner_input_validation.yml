@@ -1,0 +1,24 @@
+name: Runner input validation
+
+on:
+  pull_request:
+    paths:
+      - action.sh
+      - action.yml
+      - tests/runner_input_validation_test.sh
+      - .github/workflows/runner_input_validation.yml
+  push:
+    branches:
+      - main
+    paths:
+      - action.sh
+      - action.yml
+      - tests/runner_input_validation_test.sh
+      - .github/workflows/runner_input_validation.yml
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: tests/runner_input_validation_test.sh
