@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - action.sh
+      - action.yml
       - tests/runner_input_validation_test.sh
       - .github/workflows/runner_input_validation.yml
   push:
@@ -11,6 +12,7 @@ on:
       - main
     paths:
       - action.sh
+      - action.yml
       - tests/runner_input_validation_test.sh
       - .github/workflows/runner_input_validation.yml
 

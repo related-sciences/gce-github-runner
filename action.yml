@@ -117,13 +117,16 @@ runs:
   using: "composite"
   steps:
     - id: gce-github-runner-script
+      env:
+        INPUT_RUNNER_VER: ${{ inputs.runner_ver }}
+        INPUT_SHUTDOWN_TIMEOUT: ${{ inputs.shutdown_timeout }}
       run: >
         ${{ github.action_path }}/action.sh
         --command=start
         --token=${{ inputs.token }}
         --project_id=${{ inputs.project_id }}
         --service_account_key='${{ inputs.service_account_key }}'
-        --runner_ver=${{ inputs.runner_ver }}
+        --runner_ver="${INPUT_RUNNER_VER}"
         --vm_name_prefix=${{ inputs.vm_name_prefix }}
         --machine_zone=${{ inputs.machine_zone }}
         --machine_type=${{ inputs.machine_type }}
@@ -132,7 +135,7 @@ runs:
         --accelerator=${{ inputs.accelerator }}
         --disk_size=${{ inputs.disk_size }}
         --scopes=${{ inputs.scopes }}
-        --shutdown_timeout=${{ inputs.shutdown_timeout }}
+        --shutdown_timeout="${INPUT_SHUTDOWN_TIMEOUT}"
         --runner_service_account=${{ inputs.runner_service_account }}
         --image_project=${{ inputs.image_project }}
         --image=${{ inputs.image }}
