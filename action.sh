@@ -164,6 +164,22 @@ do
   esac
 done
 
+function is_exact_runner_version {
+  [[ "$1" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+}
+
+function validate_inputs {
+  if [[ "${runner_ver}" != "latest" ]] && ! is_exact_runner_version "${runner_ver}"; then
+    echo "Invalid runner_ver: expected 'latest' or a version in X.Y.Z format" >&2
+    exit 1
+  fi
+
+  if [[ ! "${shutdown_timeout}" =~ ^[0-9]+$ || ${#shutdown_timeout} -gt 5 ]] || (( 10#${shutdown_timeout} > 86400 )); then
+    echo "Invalid shutdown_timeout: expected an integer from 0 through 86400" >&2
+    exit 1
+  fi
+}
+
 function gcloud_auth {
   # NOTE: when --project is specified, it updates the config
   echo ${service_account_key} | gcloud --project  ${project_id} --quiet auth activate-service-account --key-file - &>/dev/null
@@ -177,6 +193,16 @@ function start_vm {
   else
     echo "Will authenticate gcloud."
     gcloud_auth
+  fi
+
+  if [[ "${actions_preinstalled}" != "true" && "${runner_ver}" == "latest" ]]; then
+    latest_ver=$(curl -sL https://api.github.com/repos/actions/runner/releases/latest | jq -r '.tag_name' | sed -e 's/^v//')
+    if ! is_exact_runner_version "$latest_ver"; then
+      echo "Invalid resolved runner version: expected a version in X.Y.Z format" >&2
+      exit 2
+    fi
+    runner_ver="$latest_ver"
+    echo "✅ runner_ver=latest is specified. v$latest_ver is detected as the latest version."
   fi
 
   RUNNER_TOKEN=$(curl -S -s -XPOST \
@@ -258,15 +284,6 @@ function start_vm {
     cd /actions-runner
     $startup_script"
   else
-    if [[ "$runner_ver" = "latest" ]]; then
-      latest_ver=$(curl -sL https://api.github.com/repos/actions/runner/releases/latest | jq -r '.tag_name' | sed -e 's/^v//')
-      runner_ver="$latest_ver"
-      echo "✅ runner_ver=latest is specified. v$latest_ver is detected as the latest version."
-      if [[ -z "$latest_ver" || "null" == "$latest_ver" ]]; then
-        echo "❌ could not retrieve the latest version of a runner"
-        exit 2
-      fi
-    fi
     echo "✅ Startup script will install GitHub Actions v$runner_ver"
     if $arm ; then
       startup_script="${startup_prelude}
@@ -352,6 +369,7 @@ function start_vm {
 }
 
 safety_on
+validate_inputs
 case "$command" in
   start)
     start_vm

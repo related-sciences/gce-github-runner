@@ -21,7 +21,7 @@ inputs:
       This key should be created and stored as a secret. Should be JSON key.
     required: false
   runner_ver:
-    description: Version of the GitHub Runner. "latest" will resolve the latest version.
+    description: Version of the GitHub Runner in X.Y.Z format. "latest" will resolve the latest version.
     default: "latest"
     required: true
   vm_name_prefix:
@@ -87,7 +87,7 @@ inputs:
     default: cloud-platform
     required: true
   shutdown_timeout:
-    description: "Shutdown grace period (in seconds)."
+    description: "Shutdown grace period in seconds, from 0 through 86400."
     default: 30
     required: true
   actions_preinstalled:
