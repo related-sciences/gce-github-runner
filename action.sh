@@ -164,6 +164,29 @@ do
   esac
 done
 
+function validate_boolean_input {
+  local input_name=$1
+  local input_value=$2
+  case "${input_value}" in
+    true|false)
+      ;;
+    *)
+      echo "Invalid ${input_name}: expected 'true' or 'false'" >&2
+      exit 1
+      ;;
+  esac
+}
+
+function validate_boolean_inputs {
+  maintenance_policy_terminate=${maintenance_policy_terminate:-false}
+  validate_boolean_input preemptible "${preemptible}"
+  validate_boolean_input ephemeral "${ephemeral}"
+  validate_boolean_input no_external_address "${no_external_address}"
+  validate_boolean_input actions_preinstalled "${actions_preinstalled}"
+  validate_boolean_input arm "${arm}"
+  validate_boolean_input maintenance_policy_terminate "${maintenance_policy_terminate}"
+}
+
 function gcloud_auth {
   # NOTE: when --project is specified, it updates the config
   echo ${service_account_key} | gcloud --project  ${project_id} --quiet auth activate-service-account --key-file - &>/dev/null
@@ -198,7 +221,7 @@ function start_vm {
   network_flag=$([[ ! -z "${network}"  ]] && echo "--network=${network}" || echo "")
   subnet_flag=$([[ ! -z "${subnet}"  ]] && echo "--subnet=${subnet}" || echo "")
   accelerator=$([[ ! -z "${accelerator}"  ]] && echo "--accelerator=${accelerator} --maintenance-policy=TERMINATE" || echo "")
-  maintenance_policy_flag=$([[ -z "${maintenance_policy_terminate}"  ]] || echo "--maintenance-policy=TERMINATE" )
+  maintenance_policy_flag=$([[ "${maintenance_policy_terminate}" == "true" ]] && echo "--maintenance-policy=TERMINATE" || echo "")
 
   echo "The new GCE VM will be ${VM_ID}"
 
@@ -252,7 +275,7 @@ function start_vm {
 	nohup sh -c \"sleep 3d && ${shutdown_command}\" > /dev/null &
   "
 
-  if $actions_preinstalled ; then
+  if [[ "${actions_preinstalled}" == "true" ]]; then
     echo "✅ Startup script won't install GitHub Actions (pre-installed)"
     startup_script="${startup_prelude}
     cd /actions-runner
@@ -268,7 +291,7 @@ function start_vm {
       fi
     fi
     echo "✅ Startup script will install GitHub Actions v$runner_ver"
-    if $arm ; then
+    if [[ "${arm}" == "true" ]]; then
       startup_script="${startup_prelude}
       mkdir /actions-runner
       cd /actions-runner
@@ -352,6 +375,7 @@ function start_vm {
 }
 
 safety_on
+validate_boolean_inputs
 case "$command" in
   start)
     start_vm
